@@ -36,11 +36,40 @@ const SavingsTable = ({ entries, onEdit, onDelete }) => {
                         entries.map((entry) => {
                             const percentage = entry.salary > 0 ? (entry.savings / entry.salary) * 100 : 0;
 
+                            // Generate a consistent subtle color based on salary
+                            const getSalaryColor = (salary) => {
+                                const s = Number(salary);
+                                const hues = [
+                                    210, // Blue
+                                    280, // Purple
+                                    150, // Green
+                                    35,  // Orange
+                                    340, // Pink
+                                    180, // Teal
+                                    50,  // Gold
+                                    240  // Indigo
+                                ];
+                                // Multiplicative hash to reduce collisions for similar numbers
+                                // (s * large_prime) % array_length
+                                const index = Math.abs(Math.floor(s * 137)) % hues.length;
+
+                                // Slightly darker (96%) for better visibility
+                                return `hsl(${hues[index]}, 70%, 96%)`;
+                            };
+
                             return (
-                                <tr key={entry.id}>
+                                <tr key={entry.id} style={{ background: getSalaryColor(entry.salary), transition: 'background-color 0.2s' }}>
                                     <td style={{ fontWeight: 500 }}>{entry.month}</td>
                                     <td>
-                                        {formatCurrency(entry.salary || 0)}
+                                        <span style={{
+                                            fontWeight: 600,
+                                            color: 'var(--color-text-main)',
+                                            background: 'rgba(255,255,255,0.5)',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px'
+                                        }}>
+                                            {formatCurrency(entry.salary || 0)}
+                                        </span>
                                     </td>
                                     <td style={getStyleForValue(entry.expense, 'expense')}>
                                         {formatCurrency(entry.expense)}

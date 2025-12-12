@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useData } from '../../context/DataContext';
 import Button from '../UI/Button';
 import DeleteConfirmationModal from '../Dashboard/DeleteConfirmationModal';
@@ -15,8 +15,10 @@ const DistributionPage = () => {
     } = useData();
 
     const [isEditing, setIsEditing] = useState(null);
+    const formRef = useRef(null);
+    const nameInputRef = useRef(null);
     const [formData, setFormData] = useState({ name: '', amount: '' });
-    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({ key: 'amount', direction: 'desc' });
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -73,20 +75,35 @@ const DistributionPage = () => {
         maximumFractionDigits: 0
     }).format(val);
 
+    const evaluateExpression = (expression) => {
+        try {
+            const sanitized = String(expression).replace(/[^0-9+\-*/. ]/g, '');
+            if (!sanitized) return 0;
+            // eslint-disable-next-line no-new-func
+            const result = new Function('return ' + sanitized)();
+            if (isNaN(result) || !isFinite(result)) return 0;
+            return result;
+        } catch (err) {
+            return 0;
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!formData.name || !formData.amount) return;
+        if (!formData.name || formData.amount === '') return;
+
+        const calculatedAmount = evaluateExpression(formData.amount);
 
         if (isEditing) {
             updateDistribution(isEditing, {
                 name: formData.name,
-                amount: Number(formData.amount)
+                amount: calculatedAmount
             });
             setIsEditing(null);
         } else {
             addDistribution({
                 name: formData.name,
-                amount: Number(formData.amount)
+                amount: calculatedAmount
             });
         }
         setFormData({ name: '', amount: '' });
@@ -95,6 +112,9 @@ const DistributionPage = () => {
     const handleEdit = (item) => {
         setFormData({ name: item.name, amount: item.amount });
         setIsEditing(item.id);
+        // Scroll to form and focus
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => nameInputRef.current?.focus(), 500);
     };
 
     const handleDelete = (id) => {
@@ -163,7 +183,7 @@ const DistributionPage = () => {
             </div>
 
             {/* Input Form */}
-            <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
+            <div ref={formRef} className="card" style={{ marginBottom: '2rem', padding: '1.5rem', transition: 'box-shadow 0.3s', boxShadow: isEditing ? '0 0 0 2px var(--color-primary)' : 'var(--shadow-sm)' }}>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: '200px' }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
@@ -171,6 +191,7 @@ const DistributionPage = () => {
                         </label>
                         <input
                             type="text"
+                            ref={nameInputRef}
                             placeholder="e.g. HDFC Bank, Stocks"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -183,8 +204,8 @@ const DistributionPage = () => {
                             Amount
                         </label>
                         <input
-                            type="number"
-                            placeholder="0"
+                            type="text"
+                            placeholder="e.g. 50000 + 1000"
                             value={formData.amount}
                             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                             className="input-field"
