@@ -1,5 +1,13 @@
-import { createContext, useContext, useState } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage';
+import { createContext, useContext, useState, useEffect } from 'react';
+import {
+    onAuthStateChanged,
+    signInWithPopup,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
+    updateProfile
+} from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 
 const AuthContext = createContext();
 
@@ -7,33 +15,70 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [users, setUsers] = useLocalStorage('registered_users', []); // Store array of { username, password }
+    const [loading, setLoading] = useState(true);
 
-    const login = (username, password) => {
-        const foundUser = users.find(u => u.username === username && u.password === password);
-        if (foundUser) {
-            setUser({ username: foundUser.username });
-            return true;
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser) {
+                // Normalize user object
+                setUser({
+                    uid: currentUser.uid,
+                    email: currentUser.email,
+                    username: currentUser.displayName || currentUser.email.split('@')[0],
+                    photoURL: currentUser.photoURL
+                });
+            } else {
+                setUser(null);
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    const loginWithGoogle = async () => {
+        try {
+            await signInWithPopup(auth, googleProvider);
+            return { success: true };
+        } catch (error) {
+            return { success: false, message: error.message };
         }
-        return false;
     };
 
-    const signup = (username, password) => {
-        if (users.some(u => u.username === username)) {
-            return { success: false, message: 'Username already exists' };
+    const login = async (email, password) => {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            return { success: true };
+        } catch (error) {
+            let msg = error.message;
+            if (error.code === 'auth/invalid-credential') msg = 'Invalid email or password.';
+            return { success: false, message: msg };
         }
-        setUsers([...users, { username, password }]);
-        setUser({ username }); // Auto login after signup
-        return { success: true };
     };
 
-    const logout = () => {
-        setUser(null);
+    const signup = async (username, email, password) => {
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            // Update profile with username
+            await updateProfile(userCredential.user, {
+                displayName: username
+            });
+            // Force update local state if needed immediately, though onAuthStateChanged triggers
+            return { success: true };
+        } catch (error) {
+            let msg = error.message;
+            if (error.code === 'auth/email-already-in-use') msg = 'Email already in use.';
+            return { success: false, message: msg };
+        }
+    };
+
+    const logout = async () => {
+        await signOut(auth);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, signup, logout }}>
-            {children}
+        <AuthContext.Provider value={{ user, login, signup, logout, loginWithGoogle, loading }}>
+            {!loading && children}
         </AuthContext.Provider>
     );
 };
