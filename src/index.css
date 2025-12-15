@@ -232,36 +232,52 @@ tr:hover td {
 }
 
 /* Custom Select Styles */
+/* Custom Select Styles */
 .select-minimal {
   appearance: none;
-  background-color: var(--color-bg-subtle);
+  background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  padding: 0.25rem 2rem 0.25rem 1rem;
+  border-radius: var(--radius-md);
+  padding: 0.25rem 2rem 0.25rem 0.75rem;
   font-size: 0.75rem;
   color: var(--color-text-main);
   font-weight: 500;
   cursor: pointer;
   outline: none;
   transition: all var(--transition-fast);
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e");
-  background-position: right 0.5rem center;
+  box-shadow: var(--shadow-sm);
+  /* Primary color chevron for pop */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238b5cf6'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
   background-repeat: no-repeat;
   background-size: 1em 1em;
 }
 
 .select-minimal:hover {
   border-color: var(--color-primary);
-  background-color: var(--color-bg-surface);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .select-minimal:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 /* Dark mode adjustment for the arrow icon */
 .dark .select-minimal {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e");
+  background-color: var(--color-bg-subtle);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a78bfa'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e");
+}
+
+/* Hover Only Actions */
+.distribution-row .action-buttons,
+.savings-row .action-buttons {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.distribution-row:hover .action-buttons,
+.savings-row:hover .action-buttons {
+  opacity: 1;
 }

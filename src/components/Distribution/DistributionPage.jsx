@@ -254,11 +254,11 @@ const DistributionPage = () => {
                             </tr>
                         ) : (
                             sortedDistributions.map(item => (
-                                <tr key={item.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                <tr key={item.id} className="distribution-row" style={{ borderBottom: '1px solid var(--color-border)' }}>
                                     <td style={{ padding: '1rem', fontWeight: 500 }}>{item.name}</td>
                                     <td style={{ padding: '1rem', textAlign: 'right' }}>{formatCurrency(item.amount)}</td>
                                     <td style={{ padding: '1rem', textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                        <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                             <button
                                                 onClick={() => handleEdit(item)}
                                                 className="btn btn-ghost"

@@ -19,9 +19,16 @@ const AnalyticsPage = () => {
         const getMonthValue = (monthStr) => {
             const [m, y] = monthStr.split(' ');
             const monthIndex = [
-                'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
             ].indexOf(m);
+
+            if (monthIndex === -1) {
+                return (Number(y) * 12) + [
+                    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                ].indexOf(m);
+            }
             return (Number(y) * 12) + monthIndex;
         };
 

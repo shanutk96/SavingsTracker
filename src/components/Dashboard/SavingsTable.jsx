@@ -58,7 +58,7 @@ const SavingsTable = ({ entries, onEdit, onDelete }) => {
                             };
 
                             return (
-                                <tr key={entry.id} style={{ background: getSalaryColor(entry.salary), transition: 'background-color 0.2s' }}>
+                                <tr key={entry.id} className="savings-row" style={{ background: getSalaryColor(entry.salary), transition: 'background-color 0.2s' }}>
                                     <td style={{ fontWeight: 500 }}>{entry.month}</td>
                                     <td>
                                         <span style={{
@@ -81,7 +81,7 @@ const SavingsTable = ({ entries, onEdit, onDelete }) => {
                                         {percentage.toFixed(1)}%
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                        <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                             <button
                                                 onClick={() => onEdit(entry)}
                                                 className="btn btn-ghost"

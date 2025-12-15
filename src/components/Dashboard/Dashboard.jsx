@@ -111,10 +111,6 @@ const Dashboard = () => {
                         <Wallet size={18} style={{ marginRight: '0.5rem' }} />
                         Set Initial Savings
                     </Button>
-                    <Button onClick={handleOpenAdd}>
-                        <Plus size={18} style={{ marginRight: '0.5rem' }} />
-                        Add Entry
-                    </Button>
                 </div>
             </div>
 
@@ -126,13 +122,13 @@ const Dashboard = () => {
                     trend={null}
                 />
                 <StatCard
-                    title="Avg Expense"
+                    title="Average Expense"
                     value={formatCurrency(avgExpense)}
                     icon={Receipt}
                     trend={null}
                 />
                 <StatCard
-                    title="Avg Savings"
+                    title="Average Savings"
                     value={formatCurrency(avgSavings)}
                     icon={TrendingUp}
                     trend={null}
@@ -159,6 +155,10 @@ const Dashboard = () => {
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text-main)', margin: 0 }}>Monthly Breakdown</h3>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <Button onClick={handleOpenAdd} style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
+                            <Plus size={16} style={{ marginRight: '0.5rem' }} />
+                            Add Entry
+                        </Button>
                         {selectedYear !== 'All' && (
                             <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-primary)', background: 'var(--color-bg-subtle)', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-full)' }}>
                                 Total saved in {selectedYear}: {formatCurrency(yearlySavings)}

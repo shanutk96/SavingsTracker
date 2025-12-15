@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
 import { Wallet, ArrowRight } from 'lucide-react';
+import bgImage from '../../assets/login_bg.png';
 
 const Login = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -56,30 +57,19 @@ const Login = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, hsl(260, 50%, 90%) 0%, hsl(300, 50%, 90%) 100%)',
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
             position: 'relative',
             overflow: 'hidden'
         }}>
-            {/* Ambient Background blobs */}
+            {/* Overlay for readability */}
             <div style={{
                 position: 'absolute',
-                top: '-10%', left: '-10%',
-                width: '500px', height: '500px',
-                background: 'var(--color-primary)',
-                opacity: 0.1,
-                filter: 'blur(80px)',
-                borderRadius: '50%',
-                animation: 'float 6s ease-in-out infinite'
-            }} />
-            <div style={{
-                position: 'absolute',
-                bottom: '-10%', right: '-10%',
-                width: '400px', height: '400px',
-                background: 'var(--color-secondary, #ec4899)', /* Fallback pink */
-                opacity: 0.1,
-                filter: 'blur(80px)',
-                borderRadius: '50%',
-                animation: 'float 8s ease-in-out infinite reverse'
+                top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(255, 255, 255, 0.3)', // Light overlay
+                // backdropFilter deleted to crisp up image
             }} />
 
             <div className="card" style={{

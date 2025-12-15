@@ -15,8 +15,8 @@ const AddEntryModal = ({ isOpen, onClose, onSave, editingEntry, existingEntries 
     const [selectedYear, setSelectedYear] = useState(currentYear);
 
     const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
     ];
 
     const years = Array.from({ length: 10 }, (_, i) => currentYear - 2 + i);

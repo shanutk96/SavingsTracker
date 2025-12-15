@@ -76,9 +76,17 @@ export const DataProvider = ({ children }) => {
             if (!monthStr) return 0;
             const [m, y] = monthStr.split(' ');
             const monthIndex = [
-                'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
             ].indexOf(m);
+            // Fallback for legacy short names if needed, though fresh start won't need it.
+            // If index is -1, try short names for backward compatibility
+            if (monthIndex === -1) {
+                return (Number(y) * 12) + [
+                    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                ].indexOf(m);
+            }
             return (Number(y) * 12) + monthIndex;
         };
 
