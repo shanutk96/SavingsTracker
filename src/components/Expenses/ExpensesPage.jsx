@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useData } from '../../context/DataContext';
 import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Edit } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
@@ -400,32 +401,35 @@ const ExpensesPage = () => {
             )}
 
             {/* Floating Add Button */}
-            <button
-                onClick={handleOpenAdd}
-                style={{
-                    position: 'fixed',
-                    bottom: '2rem',
-                    right: '2rem',
-                    background: 'var(--color-primary)', // Use Primary Color
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '50px',
-                    padding: '1rem 1.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.3)', // Soft shadow
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    zIndex: 100,
-                    transition: 'transform 0.2s',
-                    fontSize: '1rem'
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-                <Plus size={20} /> Add transaction
-            </button>
+            {createPortal(
+                <button
+                    onClick={handleOpenAdd}
+                    style={{
+                        position: 'fixed',
+                        bottom: '2rem',
+                        right: '2rem',
+                        background: 'var(--color-primary)', // Use Primary Color
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50px',
+                        padding: '1rem 1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)', // Soft shadow
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        zIndex: 100,
+                        transition: 'transform 0.2s',
+                        fontSize: '1rem'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                    <Plus size={20} /> Add transaction
+                </button>,
+                document.body
+            )}
 
             {/* Add Modal */}
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title={editingId ? "Edit Transaction" : "Add Transaction"}>

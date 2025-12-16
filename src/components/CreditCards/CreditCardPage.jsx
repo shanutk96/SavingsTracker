@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import Button from '../UI/Button';
 import ConfirmModal from '../UI/ConfirmModal';
-import { Plus, Trash2, CheckSquare, Square, Calculator, Edit2, Check, X, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, CheckSquare, Square, Calculator, Edit2, Check, X, CheckCircle, ArrowRight } from 'lucide-react';
 
 const CreditCardPage = () => {
     const {
@@ -209,8 +209,14 @@ const CreditCardPage = () => {
 };
 
 const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDeleteGroup, onMarkPaid, evaluateMath }) => {
+    // Sort items by Oldest First (Newest at Bottom)
+    const sortedItems = [...items].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
     const [newItemDesc, setNewItemDesc] = useState('');
     const [newItemAmount, setNewItemAmount] = useState('');
+    const [isAddingItem, setIsAddingItem] = useState(false);
+
+    const grandTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
     const total = items.reduce((sum, item) => {
         if (item.isChecked) return sum;
@@ -231,8 +237,10 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
             expression: newItemAmount, // Store original string
             isChecked: false
         });
+
         setNewItemDesc('');
         setNewItemAmount('');
+        setIsAddingItem(false); // Hide after adding
     };
 
     const handleEditSave = (id, updates) => {
@@ -240,8 +248,6 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
         onUpdate(id, {
             ...updates,
             amount: calculatedAmount,
-            // If expression is just a number, maybe clear expression? 
-            // Better to just save what user typed.
         });
         setEditingId(null);
     };
@@ -253,13 +259,10 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
         setEditingId(item.id);
         setEditFormData({
             description: item.description,
-            expression: item.expression || item.amount, // Show expression if exists
+            expression: item.expression || item.amount,
             cardName: cardName
         });
     };
-
-
-
 
     // Card Name Edit State
     const [isEditingCard, setIsEditingCard] = useState(false);
@@ -318,13 +321,30 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
                         </div>
                     </div>
                 )}
-                <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
-                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(total)}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {allPaid && (
+                        <div style={{
+                            color: 'var(--color-success)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            background: 'rgba(var(--color-success-rgb), 0.1)',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.8rem',
+                            fontWeight: 600
+                        }}>
+                            <CheckCircle size={12} /> Paid
+                        </div>
+                    )}
+                    <span style={{ fontWeight: 600, color: allPaid ? 'var(--color-success)' : 'var(--color-primary)' }}>
+                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(allPaid ? grandTotal : total)}
+                    </span>
+                </div>
             </div>
 
             <div style={{ padding: '0.5rem 0' }}>
-                {items.map(item => (
+                {sortedItems.map(item => (
                     <div key={item.id} className="distribution-row" style={{
                         padding: '0.5rem 1.5rem',
                         borderBottom: '1px solid var(--color-border-subtle)',
@@ -446,45 +466,79 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
                 ))}
             </div>
 
-            <form onSubmit={handleAddItem} style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <input
-                    type="text"
-                    placeholder="Add new item..."
-                    className="input-field"
-                    style={{
-                        flex: 1,
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: '1px solid var(--color-border)',
-                        borderRadius: 0,
-                        padding: '0.5rem 0',
-                        fontSize: '0.9rem',
-                        boxShadow: 'none'
-                    }}
-                    value={newItemDesc}
-                    onChange={(e) => setNewItemDesc(e.target.value)}
-                />
-                <input
-                    type="text"
-                    placeholder="0"
-                    className="input-field"
-                    style={{
-                        width: '80px',
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: '1px solid var(--color-border)',
-                        borderRadius: 0,
-                        padding: '0.5rem 0',
-                        fontSize: '0.9rem',
-                        boxShadow: 'none',
-                        fontFamily: 'monospace',
-                        textAlign: 'right'
-                    }}
-                    value={newItemAmount}
-                    onChange={(e) => setNewItemAmount(e.target.value)}
-                />
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!isAddingItem) {
+                        setIsAddingItem(true);
+                    } else {
+                        handleAddItem(e);
+                    }
+                }}
+                style={{
+                    padding: '1rem 1.5rem',
+                    borderTop: '1px solid var(--color-border)',
+                    display: 'flex',
+                    gap: '1rem',
+                    alignItems: 'center',
+                    justifyContent: isAddingItem ? 'flex-start' : 'flex-end', // Align button to right when collapsed? Or keep left?
+                    // User image shows button on right, text on left. If hidden, where should button be?
+                    // "The + button will become right arrow".
+                    // If textboxes are hidden, maybe just the button is visible.
+                    // Let's assume right alignment for collapsed state looks cleaner if it was originally there.
+                    // But usually "Add Item" is distinct.
+                    // Let's keep flex-end if collapsed? No, default was simple flex row.
+                    // Let's try keeping it simple: just hide inputs.
+                }}
+            >
+                {isAddingItem && (
+                    <>
+                        <input
+                            type="text"
+                            placeholder="Add new item..."
+                            className="input-field"
+                            style={{
+                                flex: 1,
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: '1px solid var(--color-border)',
+                                borderRadius: 0,
+                                padding: '0.5rem 0',
+                                fontSize: '0.9rem',
+                                boxShadow: 'none'
+                            }}
+                            autoFocus
+                            value={newItemDesc}
+                            onChange={(e) => setNewItemDesc(e.target.value)}
+                        />
+                        <input
+                            type="text"
+                            placeholder="0"
+                            className="input-field"
+                            style={{
+                                width: '80px',
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: '1px solid var(--color-border)',
+                                borderRadius: 0,
+                                padding: '0.5rem 0',
+                                fontSize: '0.9rem',
+                                boxShadow: 'none',
+                                fontFamily: 'monospace',
+                                textAlign: 'right'
+                            }}
+                            value={newItemAmount}
+                            onChange={(e) => setNewItemAmount(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleAddItem(e);
+                                }
+                            }}
+                        />
+                    </>
+                )}
                 <button
-                    type="submit"
+                    type="submit" // On click, if !isAddingItem, handler sets state. If isAddingItem, handler adds.
                     style={{
                         background: 'var(--color-primary)',
                         color: 'white',
@@ -496,11 +550,13 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        marginLeft: isAddingItem ? 0 : 'auto', // Push to right if collapsed?
+                        transition: 'all 0.2s'
                     }}
-                    title="Add Item"
+                    title={isAddingItem ? "Send" : "Add New Item"}
                 >
-                    <Plus size={16} />
+                    {isAddingItem ? <ArrowRight size={16} /> : <Plus size={16} />}
                 </button>
             </form>
         </div>
