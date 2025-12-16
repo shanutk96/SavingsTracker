@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Edit } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import Button from '../UI/Button';
 import Modal from '../UI/Modal';
 import ConfirmModal from '../UI/ConfirmModal';
 
 const ExpensesPage = () => {
-    const { dailyExpenses, addDailyExpense, deleteDailyExpense, evaluateMathExpression } = useData();
+    const { dailyExpenses, addDailyExpense, deleteDailyExpense, updateDailyExpense, evaluateMathExpression } = useData();
     const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#71B37C'];
 
     // Month Selection
@@ -70,6 +70,8 @@ const ExpensesPage = () => {
 
     const [customCategory, setCustomCategory] = useState('');
     const [isCustomCategory, setIsCustomCategory] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [hoveredId, setHoveredId] = useState(null);
 
     // Delete Confirmation State
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, id: null });
@@ -85,15 +87,61 @@ const ExpensesPage = () => {
         const d = new Date(newExpense.date);
         const mStr = `${months[d.getMonth()]} ${d.getFullYear()}`;
 
-        addDailyExpense({
+        const expenseData = {
             ...newExpense,
             category: finalCategory,
             amount: evaluateMathExpression(newExpense.amount),
             expression: newExpense.amount,
             month: mStr
-        });
+        };
+
+        if (editingId) {
+            updateDailyExpense(editingId, expenseData);
+        } else {
+            addDailyExpense(expenseData);
+        }
+
         setIsAddModalOpen(false);
         setNewExpense({ ...newExpense, amount: '', description: '' });
+        setEditingId(null);
+        setCustomCategory('');
+        setIsCustomCategory(false);
+    };
+
+    const handleEdit = (item) => {
+        setNewExpense({
+            amount: item.expression || item.amount.toString(),
+            description: item.description || '',
+            category: item.category,
+            date: item.date
+        });
+        if (!categories.includes(item.category)) {
+            setCustomCategory(item.category);
+            // Logic to show custom input could be complex here, 
+            // but simpler to just keep it as 'custom' in dropdown logic or auto-select.
+            // For now, let's assume standard categories or if custom, handle appropriately.
+            // If category not in list, we might want to switch to custom mode or just push it to options temporarily?
+            // Simpler approach: If not in default categories, treat as custom.
+            setIsCustomCategory(true);
+        } else {
+            setIsCustomCategory(false);
+        }
+
+        setEditingId(item.id);
+        setIsAddModalOpen(true);
+    };
+
+    const handleOpenAdd = () => {
+        setEditingId(null);
+        setNewExpense({
+            amount: '',
+            description: '',
+            category: 'Food + Grocery',
+            date: new Date().toISOString().split('T')[0]
+        });
+        setIsCustomCategory(false);
+        setCustomCategory('');
+        setIsAddModalOpen(true);
     };
 
     const confirmDelete = () => {
@@ -279,7 +327,13 @@ const ExpensesPage = () => {
                             .filter(item => item.category === viewCategory)
                             .sort((a, b) => new Date(b.date) - new Date(a.date))
                             .map(item => (
-                                <div key={item.id} className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div
+                                    key={item.id}
+                                    className="card"
+                                    style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                    onMouseEnter={() => setHoveredId(item.id)}
+                                    onMouseLeave={() => setHoveredId(null)}
+                                >
                                     <div>
                                         <div style={{ fontWeight: 600 }}>{item.description || item.category}</div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
@@ -290,26 +344,54 @@ const ExpensesPage = () => {
                                         <div style={{ fontWeight: 700, color: 'var(--color-danger)' }}>
                                             {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.amount)}
                                         </div>
-                                        <button
-                                            onClick={() => setConfirmConfig({ isOpen: true, id: item.id })}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: 'var(--color-text-muted)',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '4px',
-                                                fontSize: '0.8rem',
-                                                padding: '4px',
-                                                opacity: 0.7
-                                            }}
-                                            onMouseEnter={(e) => e.target.style.opacity = 1}
-                                            onMouseLeave={(e) => e.target.style.opacity = 0.7}
-                                            title="Delete"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
+
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: '8px',
+                                            opacity: hoveredId === item.id ? 1 : 0,
+                                            transition: 'opacity 0.2s'
+                                        }}>
+                                            <button
+                                                onClick={() => handleEdit(item)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: 'var(--color-text-muted)',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    fontSize: '0.8rem',
+                                                    padding: '4px',
+                                                    opacity: 0.7
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.opacity = 1}
+                                                onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                                                title="Edit"
+                                            >
+                                                <Edit size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => setConfirmConfig({ isOpen: true, id: item.id })}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: 'var(--color-text-muted)',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    fontSize: '0.8rem',
+                                                    padding: '4px',
+                                                    opacity: 0.7
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.opacity = 1}
+                                                onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -319,7 +401,7 @@ const ExpensesPage = () => {
 
             {/* Floating Add Button */}
             <button
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={handleOpenAdd}
                 style={{
                     position: 'fixed',
                     bottom: '2rem',
@@ -346,7 +428,7 @@ const ExpensesPage = () => {
             </button>
 
             {/* Add Modal */}
-            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add Transaction">
+            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title={editingId ? "Edit Transaction" : "Add Transaction"}>
                 <form onSubmit={handleAddSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
                     {/* Amount */}
@@ -439,7 +521,7 @@ const ExpensesPage = () => {
                     </div>
 
                     <Button type="submit" variant="primary" style={{ marginTop: '1rem' }}>
-                        Save Transaction
+                        {editingId ? "Update Transaction" : "Save Transaction"}
                     </Button>
                 </form>
             </Modal>
