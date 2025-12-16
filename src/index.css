@@ -61,7 +61,6 @@ body {
 
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -272,12 +271,14 @@ tr:hover td {
 
 /* Hover Only Actions */
 .distribution-row .action-buttons,
-.savings-row .action-buttons {
+.savings-row .action-buttons,
+.card-group-header .header-edit-btn {
   opacity: 0;
   transition: opacity 0.2s ease;
 }
 
 .distribution-row:hover .action-buttons,
-.savings-row:hover .action-buttons {
+.savings-row:hover .action-buttons,
+.card-group-header:hover .header-edit-btn {
   opacity: 1;
 }

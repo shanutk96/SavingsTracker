@@ -9,7 +9,10 @@ import {
     setDoc,
     updateDoc,
     deleteDoc,
-    getDoc
+    getDoc,
+    writeBatch,
+    getDocs,
+    where
 } from 'firebase/firestore';
 
 const DataContext = createContext();
@@ -21,6 +24,8 @@ export const DataProvider = ({ children }) => {
     const [entries, setEntries] = useState([]);
     const [initialBalance, setInitialBalance] = useState(0);
     const [distributions, setDistributions] = useState([]);
+    const [ccExpenses, setCcExpenses] = useState([]);
+    const [dailyExpenses, setDailyExpenses] = useState([]);
 
     // Real-time Data Sync
     useEffect(() => {
@@ -28,6 +33,8 @@ export const DataProvider = ({ children }) => {
             setEntries([]);
             setInitialBalance(0);
             setDistributions([]);
+            setCcExpenses([]);
+            setDailyExpenses([]);
             return;
         }
 
@@ -59,10 +66,32 @@ export const DataProvider = ({ children }) => {
             setDistributions(fetchedDist);
         });
 
+        // 4. Listen to Credit Card Expenses Subcollection
+        const ccQuery = query(collection(db, 'users', user.uid, 'cc_expenses'));
+        const unsubscribeCC = onSnapshot(ccQuery, (snapshot) => {
+            const fetchedCC = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setCcExpenses(fetchedCC);
+        });
+
+        // 5. Listen to Daily Expenses Subcollection
+        const dailyQuery = query(collection(db, 'users', user.uid, 'daily_expenses'));
+        const unsubscribeDaily = onSnapshot(dailyQuery, (snapshot) => {
+            const fetchedDaily = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setDailyExpenses(fetchedDaily);
+        });
+
         return () => {
             unsubscribeUser();
             unsubscribeEntries();
             unsubscribeDist();
+            unsubscribeCC();
+            unsubscribeDaily();
         };
     }, [user]);
 
@@ -161,6 +190,113 @@ export const DataProvider = ({ children }) => {
         await deleteDoc(distRef);
     };
 
+    // Credit Card Handlers
+    const addCCExpense = async (item) => {
+        if (!user) return;
+        const newDocRef = doc(collection(db, 'users', user.uid, 'cc_expenses'));
+        await setDoc(newDocRef, {
+            ...item,
+            id: newDocRef.id,
+            createdAt: new Date().toISOString()
+        });
+    };
+
+    const updateCCExpense = async (id, updatedItem) => {
+        if (!user) return;
+        const ccRef = doc(db, 'users', user.uid, 'cc_expenses', id);
+        await updateDoc(ccRef, updatedItem);
+    };
+
+    const deleteCCExpense = async (id) => {
+        if (!user) return;
+        const ccRef = doc(db, 'users', user.uid, 'cc_expenses', id);
+        await deleteDoc(ccRef);
+    };
+
+    const renameCardGroup = async (oldName, newName, month) => {
+        if (!user) return;
+
+        // 1. Get all expenses for this card/month
+        const q = query(
+            collection(db, 'users', user.uid, 'cc_expenses'),
+            where('cardName', '==', oldName),
+            where('month', '==', month)
+        );
+
+        const snapshot = await getDocs(q); // Need getDocs import? No, I need it.
+        // Wait, I missed importing getDocs.
+
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(doc => {
+            batch.update(doc.ref, { cardName: newName });
+        });
+
+        await batch.commit();
+    };
+
+    const deleteCardGroup = async (cardName, month) => {
+        if (!user) return;
+        const q = query(
+            collection(db, 'users', user.uid, 'cc_expenses'),
+            where('cardName', '==', cardName),
+            where('month', '==', month)
+        );
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+    };
+
+    const markCardGroupPaid = async (cardName, month, isPaid) => {
+        if (!user) return;
+        const q = query(
+            collection(db, 'users', user.uid, 'cc_expenses'),
+            where('cardName', '==', cardName),
+            where('month', '==', month)
+        );
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(doc => batch.update(doc.ref, { isChecked: isPaid }));
+        await batch.commit();
+    };
+
+    // Daily Expenses Handlers
+    const addDailyExpense = async (item) => {
+        if (!user) return;
+        const newDocRef = doc(collection(db, 'users', user.uid, 'daily_expenses'));
+        await setDoc(newDocRef, {
+            ...item,
+            id: newDocRef.id,
+            createdAt: new Date().toISOString()
+        });
+    };
+
+    const updateDailyExpense = async (id, updatedItem) => {
+        if (!user) return;
+        const ref = doc(db, 'users', user.uid, 'daily_expenses', id);
+        await updateDoc(ref, updatedItem);
+    };
+
+    const deleteDailyExpense = async (id) => {
+        if (!user) return;
+        const ref = doc(db, 'users', user.uid, 'daily_expenses', id);
+        await deleteDoc(ref);
+    };
+
+    // Helper to evaluate math expressions
+    const evaluateMathExpression = (expression) => {
+        try {
+            const sanitized = String(expression).replace(/[^0-9+\-*/. ]/g, '');
+            if (!sanitized) return 0;
+            // eslint-disable-next-line no-new-func
+            const result = new Function('return ' + sanitized)();
+            if (isNaN(result) || !isFinite(result)) return 0;
+            return result;
+        } catch (err) {
+            return 0;
+        }
+    };
+
     return (
         <DataContext.Provider value={{
             entries: processedEntries,
@@ -172,7 +308,20 @@ export const DataProvider = ({ children }) => {
             updateInitialBalance,
             addDistribution,
             updateDistribution,
-            deleteDistribution
+            deleteDistribution,
+            ccExpenses,
+            addCCExpense,
+            updateCCExpense,
+            deleteCCExpense,
+
+            renameCardGroup,
+            deleteCardGroup,
+            markCardGroupPaid,
+            evaluateMathExpression,
+            dailyExpenses,
+            addDailyExpense,
+            updateDailyExpense,
+            deleteDailyExpense
         }}>
             {children}
         </DataContext.Provider>

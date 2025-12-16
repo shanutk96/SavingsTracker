@@ -1,4 +1,4 @@
-import { LogOut, Wallet, User } from 'lucide-react';
+import { LogOut, Wallet, User, CreditCard } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../UI/Button';
@@ -65,6 +65,18 @@ const Navbar = () => {
                                 Investments
                             </NavLink>
                             <NavLink
+                                to="/expenses"
+                                style={({ isActive }) => ({
+                                    textDecoration: 'none',
+                                    color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                    fontWeight: isActive ? 600 : 500,
+                                    fontSize: '0.925rem',
+                                    transition: 'color 0.2s'
+                                })}
+                            >
+                                Expense
+                            </NavLink>
+                            <NavLink
                                 to="/analytics"
                                 style={({ isActive }) => ({
                                     textDecoration: 'none',
@@ -75,6 +87,18 @@ const Navbar = () => {
                                 })}
                             >
                                 Trends
+                            </NavLink>
+                            <NavLink
+                                to="/credit-cards"
+                                style={({ isActive }) => ({
+                                    textDecoration: 'none',
+                                    color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                    fontWeight: isActive ? 600 : 500,
+                                    fontSize: '0.925rem',
+                                    transition: 'color 0.2s'
+                                })}
+                            >
+                                Cards
                             </NavLink>
                         </div>
                         <div style={{ width: '1px', height: '24px', background: 'var(--color-border)' }}></div>

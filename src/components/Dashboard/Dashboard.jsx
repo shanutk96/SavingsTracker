@@ -138,6 +138,21 @@ const Dashboard = () => {
                             onChange={(e) => setSalaryFilter(e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             className="select-minimal"
+                            style={{
+                                padding: '0.25rem 1.75rem 0.25rem 0.75rem',
+                                appearance: 'none',
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 0.5rem center',
+                                backgroundSize: '1em',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '6px',
+                                background: 'var(--color-bg-card)',
+                                color: 'var(--color-text-main)',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                fontSize: '0.8rem'
+                            }}
                         >
                             <option value="Overall">Overall</option>
                             {uniqueSalaries.map(sal => (
@@ -167,15 +182,21 @@ const Dashboard = () => {
                         <select
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(e.target.value)}
+                            className="select-minimal"
                             style={{
                                 padding: '0.5rem 2rem 0.5rem 1rem',
-                                borderRadius: 'var(--radius-md)',
+                                appearance: 'none',
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 0.75rem center',
+                                backgroundSize: '1em',
                                 border: '1px solid var(--color-border)',
-                                background: 'var(--color-bg-surface)',
+                                borderRadius: '8px',
+                                background: 'var(--color-bg-card)',
                                 color: 'var(--color-text-main)',
-                                fontSize: '0.875rem',
+                                fontWeight: 600,
                                 cursor: 'pointer',
-                                outline: 'none'
+                                fontSize: '0.875rem'
                             }}
                         >
                             <option value="All">All Years</option>
