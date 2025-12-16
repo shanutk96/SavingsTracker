@@ -476,7 +476,7 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
                     }
                 }}
                 style={{
-                    padding: '1rem 1.5rem',
+                    padding: '1rem 1rem', // Reduced side padding for more space
                     borderTop: '1px solid var(--color-border)',
                     display: 'flex',
                     gap: '1rem',
@@ -551,13 +551,43 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
                         justifyContent: 'center',
                         cursor: 'pointer',
                         flexShrink: 0,
-                        marginLeft: isAddingItem ? 0 : 'auto', // Push to right if collapsed?
+                        marginLeft: isAddingItem ? '0.5rem' : 'auto', // Add small margin when adding
                         transition: 'all 0.2s'
                     }}
                     title={isAddingItem ? "Send" : "Add New Item"}
                 >
                     {isAddingItem ? <ArrowRight size={16} /> : <Plus size={16} />}
                 </button>
+                {isAddingItem && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsAddingItem(false);
+                            setNewItemDesc('');
+                            setNewItemAmount('');
+                        }}
+                        style={{
+                            background: 'transparent',
+                            color: 'var(--color-text-muted)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '50%',
+                            width: '28px',
+                            height: '28px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            marginLeft: '0.25rem', // Tighter spacing between buttons
+                            transition: 'all 0.2s'
+                        }}
+                        title="Cancel"
+                        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-danger)'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+                    >
+                        <X size={14} />
+                    </button>
+                )}
             </form>
         </div>
     );
