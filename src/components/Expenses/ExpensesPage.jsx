@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useData } from '../../context/DataContext';
 import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Edit } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
@@ -18,6 +17,7 @@ const ExpensesPage = () => {
     ];
     const currentDate = new Date();
     const [selectedMonth, setSelectedMonth] = useState(`${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`);
+    const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
     const monthOptions = useMemo(() => {
         const options = [];
@@ -137,7 +137,7 @@ const ExpensesPage = () => {
         setNewExpense({
             amount: '',
             description: '',
-            category: 'Food + Grocery',
+            category: viewCategory || 'Food + Grocery',
             date: new Date().toISOString().split('T')[0]
         });
         setIsCustomCategory(false);
@@ -284,6 +284,30 @@ const ExpensesPage = () => {
                                 No expenses yet for this month.
                             </div>
                         )}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                            <button
+                                onClick={handleOpenAdd}
+                                style={{
+                                    background: 'var(--color-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '50px',
+                                    padding: '0.8rem 1.5rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    fontSize: '1rem',
+                                    boxShadow: 'var(--shadow-md)',
+                                    transition: 'transform 0.2s',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                <Plus size={20} /> Add transaction
+                            </button>
+                        </div>
                     </div>
                 </>
             )}
@@ -396,40 +420,36 @@ const ExpensesPage = () => {
                                     </div>
                                 </div>
                             ))}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                            <button
+                                onClick={handleOpenAdd}
+                                style={{
+                                    background: 'var(--color-primary)', // Use Primary Color
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '50px',
+                                    padding: '0.8rem 1.5rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    fontSize: '1rem',
+                                    boxShadow: 'var(--shadow-md)',
+                                    transition: 'transform 0.2s',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                <Plus size={20} /> Add transaction
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Floating Add Button */}
-            {createPortal(
-                <button
-                    onClick={handleOpenAdd}
-                    style={{
-                        position: 'fixed',
-                        bottom: '2rem',
-                        right: '2rem',
-                        background: 'var(--color-primary)', // Use Primary Color
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '50px',
-                        padding: '1rem 1.5rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)', // Soft shadow
-                        cursor: 'pointer',
-                        fontWeight: 600,
-                        zIndex: 100,
-                        transition: 'transform 0.2s',
-                        fontSize: '1rem'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                    <Plus size={20} /> Add transaction
-                </button>,
-                document.body
-            )}
+
 
             {/* Add Modal */}
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title={editingId ? "Edit Transaction" : "Add Transaction"}>
@@ -466,37 +486,81 @@ const ExpensesPage = () => {
                         <label className="label">Category</label>
                         {!isCustomCategory ? (
                             <div style={{ position: 'relative' }}>
-                                <select
+                                <div
+                                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                                     className="input-field"
-                                    value={newExpense.category}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'custom') {
-                                            setIsCustomCategory(true);
-                                        } else {
-                                            setNewExpense({ ...newExpense, category: e.target.value });
-                                        }
-                                    }}
                                     style={{
-                                        appearance: 'none',
-                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                                        backgroundRepeat: 'no-repeat',
-                                        backgroundPosition: 'right 0.75rem center',
-                                        backgroundSize: '1em',
-                                        border: '1px solid var(--color-border)',
-                                        borderRadius: '8px',
-                                        background: 'var(--color-bg-card)',
-                                        color: 'var(--color-text-main)', // Ensure text color is correct
-                                        fontWeight: 500,
-                                        padding: '0.75rem 2rem 0.75rem 1rem', // Slightly larger padding for form input
-                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
                                         cursor: 'pointer',
-                                        outline: 'none',
-                                        fontSize: '1rem'
+                                        background: 'var(--color-bg-card)',
+                                        color: 'var(--color-text-main)',
+                                        fontWeight: 500,
+                                        padding: '0.75rem 1rem',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: '8px'
                                     }}
                                 >
-                                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                                    <option value="custom">+ Create New Category</option>
-                                </select>
+                                    <span>{newExpense.category || 'Select Category'}</span>
+                                    <ChevronRight size={16} style={{ transform: isCategoryDropdownOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                                </div>
+                                {isCategoryDropdownOpen && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        right: 0,
+                                        background: 'var(--color-bg-surface)', // Ensure high contrast or standard surface
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: '8px',
+                                        marginTop: '4px',
+                                        zIndex: 1000,
+                                        boxShadow: 'var(--shadow-md)',
+                                        maxHeight: '200px',
+                                        overflowY: 'auto'
+                                    }}>
+                                        {categories.map(c => (
+                                            <div
+                                                key={c}
+                                                onClick={() => {
+                                                    setNewExpense({ ...newExpense, category: c });
+                                                    setIsCategoryDropdownOpen(false);
+                                                }}
+                                                style={{
+                                                    padding: '0.75rem 1rem',
+                                                    cursor: 'pointer',
+                                                    borderBottom: '1px solid var(--color-border-subtle)',
+                                                    transition: 'background 0.2s'
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-subtle)'}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                {c}
+                                            </div>
+                                        ))}
+                                        <div
+                                            onClick={() => {
+                                                setIsCustomCategory(true);
+                                                setIsCategoryDropdownOpen(false);
+                                            }}
+                                            style={{
+                                                padding: '0.75rem 1rem',
+                                                cursor: 'pointer',
+                                                color: 'var(--color-primary)',
+                                                fontWeight: 600,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                background: 'rgba(var(--color-primary-rgb), 0.05)'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--color-primary-rgb), 0.1)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(var(--color-primary-rgb), 0.05)'}
+                                        >
+                                            <Plus size={16} /> Create New Category
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
