@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, zIndex = 50 }) => {
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
@@ -22,7 +22,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 50,
+            zIndex: zIndex,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

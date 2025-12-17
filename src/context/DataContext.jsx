@@ -9,10 +9,11 @@ import {
     setDoc,
     updateDoc,
     deleteDoc,
-    getDoc,
     writeBatch,
     getDocs,
-    where
+    where,
+    arrayUnion,
+    arrayRemove
 } from 'firebase/firestore';
 
 const DataContext = createContext();
@@ -26,6 +27,7 @@ export const DataProvider = ({ children }) => {
     const [distributions, setDistributions] = useState([]);
     const [ccExpenses, setCcExpenses] = useState([]);
     const [dailyExpenses, setDailyExpenses] = useState([]);
+    const [categoriesList, setCategoriesList] = useState([]);
 
     // Real-time Data Sync
     useEffect(() => {
@@ -42,7 +44,17 @@ export const DataProvider = ({ children }) => {
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
-                setInitialBalance(docSnap.data().initialBalance || 0);
+                const data = docSnap.data();
+                setInitialBalance(data.initialBalance || 0);
+
+                if (data.categories) {
+                    setCategoriesList(data.categories);
+                } else {
+                    // Initialize empty list for new users
+                    // We explicitly set it to empty array so we know they are initialized
+                    setDoc(userDocRef, { categories: [] }, { merge: true });
+                    setCategoriesList([]);
+                }
             }
         });
 
@@ -283,6 +295,57 @@ export const DataProvider = ({ children }) => {
         await deleteDoc(ref);
     };
 
+    const renameCategory = async (oldName, newName) => {
+        if (!user) return;
+
+        // Find all expenses with the old category name
+        const q = query(
+            collection(db, 'users', user.uid, 'daily_expenses'),
+            where('category', '==', oldName)
+        );
+
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+
+        // Update all matching expenses
+        snapshot.docs.forEach(doc => {
+            batch.update(doc.ref, { category: newName });
+        });
+
+        // Also update categoriesList if the old name was in there
+        if (categoriesList.includes(oldName)) {
+            const userRef = doc(db, 'users', user.uid);
+
+            // Avoid arrayRemove/arrayUnion conflict in same batch by calculating new list
+            const newCategories = categoriesList.map(c => c === oldName ? newName : c);
+
+            // Ensure uniqueness just in case
+            const uniqueCategories = [...new Set(newCategories)];
+
+            batch.update(userRef, {
+                categories: uniqueCategories
+            });
+        }
+
+        await batch.commit();
+    };
+
+    const addCategory = async (categoryName) => {
+        if (!user || !categoryName) return;
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+            categories: arrayUnion(categoryName)
+        });
+    };
+
+    const deleteCategory = async (categoryName) => {
+        if (!user || !categoryName) return;
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+            categories: arrayRemove(categoryName)
+        });
+    };
+
     // Helper to evaluate math expressions
     const evaluateMathExpression = (expression) => {
         try {
@@ -321,7 +384,11 @@ export const DataProvider = ({ children }) => {
             dailyExpenses,
             addDailyExpense,
             updateDailyExpense,
-            deleteDailyExpense
+            deleteDailyExpense,
+            renameCategory,
+            categoriesList,
+            addCategory,
+            deleteCategory
         }}>
             {children}
         </DataContext.Provider>

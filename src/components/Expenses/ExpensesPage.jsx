@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Edit } from 'lucide-react';
+import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Edit, Settings, Check, Edit2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import Button from '../UI/Button';
 import Modal from '../UI/Modal';
 import ConfirmModal from '../UI/ConfirmModal';
 
 const ExpensesPage = () => {
-    const { dailyExpenses, addDailyExpense, deleteDailyExpense, updateDailyExpense, evaluateMathExpression } = useData();
+    const { dailyExpenses, addDailyExpense, deleteDailyExpense, updateDailyExpense, evaluateMathExpression, renameCategory, categoriesList, addCategory, deleteCategory } = useData();
     const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#71B37C'];
 
     // Month Selection
@@ -65,7 +65,7 @@ const ExpensesPage = () => {
     const [newExpense, setNewExpense] = useState({
         amount: '',
         description: '',
-        category: 'Food + Grocery', // Default
+        category: '', // initialized empty, will be set on open or via effect
         date: new Date().toISOString().split('T')[0]
     });
 
@@ -77,12 +77,71 @@ const ExpensesPage = () => {
     // Delete Confirmation State
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, id: null });
 
-    const categories = ['Own expense', 'Food + Grocery', 'Home expenses', 'Room + Other'];
+    // Category Management
+    const [isManagerOpen, setIsManagerOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState(null); // The category currently being renamed
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [hoveredCategory, setHoveredCategory] = useState(null);
 
-    const handleAddSubmit = (e) => {
+    // Compute all unique categories dynamically - Now mostly relying on categoriesList
+    // but we can still sort it or ensure uniqueness if needed.
+    // Actually, categoriesList from Context is sufficient as the source of truth.
+    // Compute all unique categories dynamically
+    const allCategories = useMemo(() => {
+        // Strict Source of Truth: categoriesList from Firestore.
+        // This ensures that when a user deletes a category, it stays deleted from the UI,
+        // even if historical transactions still use it.
+        return (categoriesList || []).sort();
+    }, [categoriesList]);
+
+    const handleRenameSubmit = async (oldName) => {
+        if (!newCategoryName.trim() || newCategoryName === oldName) {
+            setEditingCategory(null);
+            return;
+        }
+        try {
+            await renameCategory(oldName, newCategoryName);
+            setEditingCategory(null);
+            setNewCategoryName('');
+        } catch (error) {
+            console.error("Rename failed:", error);
+            alert("Failed to rename category: " + error.message);
+        }
+    };
+
+    const confirmCategoryDelete = (category) => {
+        setConfirmConfig({
+            isOpen: true,
+            id: category, // overload id to store category name
+            isCategory: true
+        });
+    };
+
+    const handleAddCategory = async () => {
+        if (!newCategoryName.trim()) return;
+        if (allCategories.includes(newCategoryName)) {
+            alert('Category already exists');
+            return;
+        }
+        try {
+            await addCategory(newCategoryName);
+            setNewCategoryName('');
+        } catch (error) {
+            console.error("Add category failed:", error);
+            alert("Failed to add category: " + error.message);
+        }
+    };
+
+    const handleAddSubmit = async (e) => {
         e.preventDefault();
         const finalCategory = isCustomCategory ? customCategory : newExpense.category;
         if (!newExpense.amount || !finalCategory) return;
+
+        // Auto-persist custom categories to the list
+        if (isCustomCategory) {
+            // we don't await this blocking the UI, but we trigger it
+            addCategory(finalCategory).catch(err => console.error("Failed to auto-add category", err));
+        }
 
         // Month logic from date
         const d = new Date(newExpense.date);
@@ -97,9 +156,9 @@ const ExpensesPage = () => {
         };
 
         if (editingId) {
-            updateDailyExpense(editingId, expenseData);
+            await updateDailyExpense(editingId, expenseData);
         } else {
-            addDailyExpense(expenseData);
+            await addDailyExpense(expenseData);
         }
 
         setIsAddModalOpen(false);
@@ -116,17 +175,16 @@ const ExpensesPage = () => {
             category: item.category,
             date: item.date
         });
-        if (!categories.includes(item.category)) {
-            setCustomCategory(item.category);
-            // Logic to show custom input could be complex here, 
-            // but simpler to just keep it as 'custom' in dropdown logic or auto-select.
-            // For now, let's assume standard categories or if custom, handle appropriately.
-            // If category not in list, we might want to switch to custom mode or just push it to options temporarily?
-            // Simpler approach: If not in default categories, treat as custom.
+        // If category not in list, we might want to switch to custom mode or just push it to options temporarily?
+        // Simpler approach: If not in default categories, treat as custom.
+        // With dynamic categories, we check against allCategories
+        if (!allCategories.includes(item.category)) {
             setIsCustomCategory(true);
+            setCustomCategory(item.category);
         } else {
             setIsCustomCategory(false);
         }
+
 
         setEditingId(item.id);
         setIsAddModalOpen(true);
@@ -134,10 +192,13 @@ const ExpensesPage = () => {
 
     const handleOpenAdd = () => {
         setEditingId(null);
+        // Default to the first available category if not drilling down
+        const defaultCat = viewCategory || (allCategories.length > 0 ? allCategories[0] : '');
+
         setNewExpense({
             amount: '',
             description: '',
-            category: viewCategory || 'Food + Grocery',
+            category: defaultCat,
             date: new Date().toISOString().split('T')[0]
         });
         setIsCustomCategory(false);
@@ -146,10 +207,13 @@ const ExpensesPage = () => {
     };
 
     const confirmDelete = () => {
-        if (confirmConfig.id) {
+        if (confirmConfig.isCategory) {
+            deleteCategory(confirmConfig.id); // id holds category name
+            setConfirmConfig({ isOpen: false, id: null, isCategory: false });
+        } else if (confirmConfig.id) {
             deleteDailyExpense(confirmConfig.id);
+            setConfirmConfig({ isOpen: false, id: null });
         }
-        setConfirmConfig({ isOpen: false, id: null });
     };
 
     return (
@@ -159,8 +223,10 @@ const ExpensesPage = () => {
                 isOpen={confirmConfig.isOpen}
                 onClose={() => setConfirmConfig({ isOpen: false, id: null })}
                 onConfirm={confirmDelete}
-                title="Delete Transaction"
-                message="Are you sure you want to delete this transaction? This action cannot be undone."
+                title={confirmConfig.isCategory ? "Delete Category" : "Delete Transaction"}
+                message={confirmConfig.isCategory
+                    ? `Are you sure you want to delete "${confirmConfig.id}"? It will be removed from the list, but existing transactions will remain.`
+                    : "Are you sure you want to delete this transaction? This action cannot be undone."}
                 confirmText="Delete"
                 isDanger
             />
@@ -195,258 +261,284 @@ const ExpensesPage = () => {
                             <option key={m} value={m}>{m}</option>
                         ))}
                     </select>
+
+
+                    {/* Manage Categories Button */}
+                    <button
+                        onClick={() => setIsManagerOpen(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            background: 'transparent',
+                            border: '1px solid var(--color-border)',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '8px',
+                            color: 'var(--color-text-muted)',
+                            fontSize: '0.8rem',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            marginLeft: '1rem'
+                        }}
+                    >
+                        <Settings size={14} /> Manage
+                    </button>
                 </div>
             </div>
 
             {/* Default View: Chart + Category List */}
-            {!viewCategory && (
-                <>
-                    {/* Donut Chart */}
-                    <div style={{ height: '300px', position: 'relative', marginBottom: '2rem' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={categoryStats}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={70}
-                                    outerRadius={100}
-                                    paddingAngle={2}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {categoryStats.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    formatter={(value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)}
-                                    contentStyle={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '8px' }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        {/* Center Text */}
-                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Total</div>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>
-                                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalExpense)}
+            {
+                !viewCategory && (
+                    <>
+                        {/* Donut Chart */}
+                        <div style={{ height: '300px', position: 'relative', marginBottom: '2rem' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={categoryStats}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={70}
+                                        outerRadius={100}
+                                        paddingAngle={2}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {categoryStats.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        formatter={(value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)}
+                                        contentStyle={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '8px' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            {/* Center Text */}
+                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Total</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalExpense)}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Category List */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {categoryStats.map((cat, index) => (
-                            <div
-                                key={cat.name}
-                                onClick={() => setViewCategory(cat.name)}
-                                className="card"
-                                style={{
-                                    padding: '1rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.1s'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '50%',
-                                        background: COLORS[index % COLORS.length],
-                                        color: 'white',
+                        {/* Category List */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {categoryStats.map((cat, index) => (
+                                <div
+                                    key={cat.name}
+                                    onClick={() => setViewCategory(cat.name)}
+                                    className="card"
+                                    style={{
+                                        padding: '1rem',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 700
-                                    }}>
-                                        {Math.round((cat.value / totalExpense) * 100)}%
-                                    </div>
-                                    <div>
-                                        <div style={{ fontWeight: 600 }}>{cat.name}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{cat.count} transactions</div>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <div style={{ fontWeight: 700 }}>
-                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(cat.value)}
-                                    </div>
-                                    <ChevronRight size={16} color="var(--color-text-muted)" />
-                                </div>
-                            </div>
-                        ))}
-
-                        {categoryStats.length === 0 && (
-                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
-                                No expenses yet for this month.
-                            </div>
-                        )}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                            <button
-                                onClick={handleOpenAdd}
-                                style={{
-                                    background: 'var(--color-primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '50px',
-                                    padding: '0.8rem 1.5rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    cursor: 'pointer',
-                                    fontWeight: 600,
-                                    fontSize: '1rem',
-                                    boxShadow: 'var(--shadow-md)',
-                                    transition: 'transform 0.2s',
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                            >
-                                <Plus size={20} /> Add transaction
-                            </button>
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {/* Drill Down View: Transactions */}
-            {viewCategory && (
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <button
-                            onClick={() => setViewCategory(null)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                background: 'var(--color-bg-surface)',
-                                border: '1px solid var(--color-border)',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '20px',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
-                                color: 'var(--color-text-main)',
-                                transition: 'all 0.2s',
-                                boxShadow: 'var(--shadow-sm)'
-                            }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.transform = 'translateY(-1px)';
-                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.transform = 'none';
-                                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-                            }}
-                        >
-                            <ArrowLeft size={16} /> Back
-                        </button>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{viewCategory}</h3>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {monthlyData
-                            .filter(item => item.category === viewCategory)
-                            .sort((a, b) => new Date(b.date) - new Date(a.date))
-                            .map(item => (
-                                <div
-                                    key={item.id}
-                                    className="card"
-                                    style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                                    onMouseEnter={() => setHoveredId(item.id)}
-                                    onMouseLeave={() => setHoveredId(null)}
+                                        justifyContent: 'space-between',
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.1s'
+                                    }}
                                 >
-                                    <div>
-                                        <div style={{ fontWeight: 600 }}>{item.description || item.category}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                                            {new Date(item.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '50%',
+                                            background: COLORS[index % COLORS.length],
+                                            color: 'white',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700
+                                        }}>
+                                            {Math.round((cat.value / totalExpense) * 100)}%
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 600 }}>{cat.name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{cat.count} transactions</div>
                                         </div>
                                     </div>
-                                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                                        <div style={{ fontWeight: 700, color: 'var(--color-danger)' }}>
-                                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.amount)}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ fontWeight: 700 }}>
+                                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(cat.value)}
                                         </div>
-
-                                        <div style={{
-                                            display: 'flex',
-                                            gap: '8px',
-                                            opacity: hoveredId === item.id ? 1 : 0,
-                                            transition: 'opacity 0.2s'
-                                        }}>
-                                            <button
-                                                onClick={() => handleEdit(item)}
-                                                style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    color: 'var(--color-text-muted)',
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px',
-                                                    fontSize: '0.8rem',
-                                                    padding: '4px',
-                                                    opacity: 0.7
-                                                }}
-                                                onMouseEnter={(e) => e.target.style.opacity = 1}
-                                                onMouseLeave={(e) => e.target.style.opacity = 0.7}
-                                                title="Edit"
-                                            >
-                                                <Edit size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => setConfirmConfig({ isOpen: true, id: item.id })}
-                                                style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    color: 'var(--color-text-muted)',
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px',
-                                                    fontSize: '0.8rem',
-                                                    padding: '4px',
-                                                    opacity: 0.7
-                                                }}
-                                                onMouseEnter={(e) => e.target.style.opacity = 1}
-                                                onMouseLeave={(e) => e.target.style.opacity = 0.7}
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
+                                        <ChevronRight size={16} color="var(--color-text-muted)" />
                                     </div>
                                 </div>
                             ))}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+
+                            {categoryStats.length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+                                    No expenses yet for this month.
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                                <button
+                                    onClick={handleOpenAdd}
+                                    style={{
+                                        background: 'var(--color-primary)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '50px',
+                                        padding: '0.8rem 1.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        cursor: 'pointer',
+                                        fontWeight: 600,
+                                        fontSize: '1rem',
+                                        boxShadow: 'var(--shadow-md)',
+                                        transition: 'transform 0.2s',
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                >
+                                    <Plus size={20} /> Add transaction
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )
+            }
+
+            {/* Drill Down View: Transactions */}
+            {
+                viewCategory && (
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <button
-                                onClick={handleOpenAdd}
+                                onClick={() => setViewCategory(null)}
                                 style={{
-                                    background: 'var(--color-primary)', // Use Primary Color
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '50px',
-                                    padding: '0.8rem 1.5rem',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.5rem',
+                                    gap: '8px',
+                                    background: 'var(--color-bg-surface)',
+                                    border: '1px solid var(--color-border)',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '20px',
                                     cursor: 'pointer',
+                                    fontSize: '0.9rem',
                                     fontWeight: 600,
-                                    fontSize: '1rem',
-                                    boxShadow: 'var(--shadow-md)',
-                                    transition: 'transform 0.2s',
+                                    color: 'var(--color-text-main)',
+                                    transition: 'all 0.2s',
+                                    boxShadow: 'var(--shadow-sm)'
                                 }}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.transform = 'none';
+                                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                                }}
                             >
-                                <Plus size={20} /> Add transaction
+                                <ArrowLeft size={16} /> Back
                             </button>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{viewCategory}</h3>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {monthlyData
+                                .filter(item => item.category === viewCategory)
+                                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                .map(item => (
+                                    <div
+                                        key={item.id}
+                                        className="card"
+                                        style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                        onMouseEnter={() => setHoveredId(item.id)}
+                                        onMouseLeave={() => setHoveredId(null)}
+                                    >
+                                        <div>
+                                            <div style={{ fontWeight: 600 }}>{item.description || item.category}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                                {new Date(item.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                            </div>
+                                        </div>
+                                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                            <div style={{ fontWeight: 700, color: 'var(--color-danger)' }}>
+                                                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.amount)}
+                                            </div>
+
+                                            <div style={{
+                                                display: 'flex',
+                                                gap: '8px',
+                                                opacity: hoveredId === item.id ? 1 : 0,
+                                                transition: 'opacity 0.2s'
+                                            }}>
+                                                <button
+                                                    onClick={() => handleEdit(item)}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: 'var(--color-text-muted)',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        fontSize: '0.8rem',
+                                                        padding: '4px',
+                                                        opacity: 0.7
+                                                    }}
+                                                    onMouseEnter={(e) => e.target.style.opacity = 1}
+                                                    onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                                                    title="Edit"
+                                                >
+                                                    <Edit size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setConfirmConfig({ isOpen: true, id: item.id })}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: 'var(--color-text-muted)',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        fontSize: '0.8rem',
+                                                        padding: '4px',
+                                                        opacity: 0.7
+                                                    }}
+                                                    onMouseEnter={(e) => e.target.style.opacity = 1}
+                                                    onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                                <button
+                                    onClick={handleOpenAdd}
+                                    style={{
+                                        background: 'var(--color-primary)', // Use Primary Color
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '50px',
+                                        padding: '0.8rem 1.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        cursor: 'pointer',
+                                        fontWeight: 600,
+                                        fontSize: '1rem',
+                                        boxShadow: 'var(--shadow-md)',
+                                        transition: 'transform 0.2s',
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                >
+                                    <Plus size={20} /> Add transaction
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Floating Add Button */}
 
@@ -520,7 +612,8 @@ const ExpensesPage = () => {
                                         maxHeight: '200px',
                                         overflowY: 'auto'
                                     }}>
-                                        {categories.map(c => (
+
+                                        {allCategories.map(c => (
                                             <div
                                                 key={c}
                                                 onClick={() => {
@@ -593,7 +686,119 @@ const ExpensesPage = () => {
                     </Button>
                 </form>
             </Modal>
-        </div>
+
+            {/* Category Manager Modal */}
+            <Modal isOpen={isManagerOpen} onClose={() => setIsManagerOpen(false)} title="Manage Categories">
+                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+
+                    {/* Add New Category Input */}
+                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
+                        <input
+                            type="text"
+                            placeholder="Add new category..."
+                            className="input-field"
+                            value={!editingCategory ? newCategoryName : ''} // Only show if not editing
+                            onChange={(e) => !editingCategory && setNewCategoryName(e.target.value)}
+                            disabled={!!editingCategory}
+                            style={{ flex: 1 }}
+                        />
+                        <button
+                            onClick={handleAddCategory}
+                            disabled={!!editingCategory || !newCategoryName.trim()}
+                            style={{
+                                background: 'var(--color-primary)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '0 1rem',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                opacity: (!!editingCategory || !newCategoryName.trim()) ? 0.5 : 1
+                            }}
+                        >
+                            <Plus size={20} />
+                        </button>
+                    </div>
+
+                    <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                        Retire or rename categories. Renaming a category will update all historical transactions.
+                    </p>
+                    <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {allCategories.map(cat => (
+                            <div
+                                key={cat}
+                                onMouseEnter={() => setHoveredCategory(cat)}
+                                onMouseLeave={() => setHoveredCategory(null)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0.75rem',
+                                    background: 'var(--color-bg-subtle)',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--color-border)',
+                                    transition: 'background 0.2s'
+                                }}
+                            >
+                                {editingCategory === cat ? (
+                                    <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            value={newCategoryName}
+                                            onChange={(e) => setNewCategoryName(e.target.value)}
+                                            className="input-field"
+                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
+                                        />
+                                        <button
+                                            onClick={() => handleRenameSubmit(cat)}
+                                            style={{ background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem', cursor: 'pointer' }}
+                                        >
+                                            <Check size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => setEditingCategory(null)}
+                                            style={{ background: 'transparent', color: 'var(--color-text-muted)', border: 'none', borderRadius: '4px', padding: '0.4rem', cursor: 'pointer' }}
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <span style={{ fontWeight: 500 }}>{cat}</span>
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: '0.5rem',
+                                            opacity: hoveredCategory === cat ? 1 : 0,
+                                            transition: 'opacity 0.2s',
+                                            pointerEvents: hoveredCategory === cat ? 'auto' : 'none'
+                                        }}>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingCategory(cat);
+                                                    setNewCategoryName(cat);
+                                                }}
+                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}
+                                                title="Rename"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => confirmCategoryDelete(cat)}
+                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-danger)' }}
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </Modal>
+        </div >
     );
 };
 

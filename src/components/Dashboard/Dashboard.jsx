@@ -52,8 +52,12 @@ const Dashboard = () => {
         : entries.filter(e => Number(e.salary) === Number(salaryFilter));
 
     const totalSavingsForAvg = entriesForAvg.reduce((acc, curr) => acc + (Number(curr.savings) || 0), 0);
+    const totalSalaryForAvg = entriesForAvg.reduce((acc, curr) => acc + (Number(curr.salary) || 0), 0);
     const countForAvg = entriesForAvg.length;
+
     const avgSavings = countForAvg > 0 ? totalSavingsForAvg / countForAvg : 0;
+    const avgSalary = countForAvg > 0 ? totalSalaryForAvg / countForAvg : 0;
+    const avgSavingsPercent = avgSalary > 0 ? Math.round((avgSavings / avgSalary) * 100) : 0;
 
     const totalExpensesSinceStart = entries.reduce((acc, curr) => acc + (Number(curr.expense) || 0), 0);
     const avgExpense = totalEntries > 0 ? totalExpensesSinceStart / totalEntries : 0;
@@ -129,7 +133,21 @@ const Dashboard = () => {
                 />
                 <StatCard
                     title="Average Savings"
-                    value={formatCurrency(avgSavings)}
+                    value={
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                            {formatCurrency(avgSavings)}
+                            <span style={{
+                                fontSize: '0.9rem',
+                                color: avgSavingsPercent >= 20 ? 'var(--color-success)' : 'var(--color-danger)',
+                                background: avgSavingsPercent >= 20 ? 'rgba(var(--color-success-rgb), 0.1)' : 'rgba(var(--color-danger-rgb), 0.1)',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontWeight: 600
+                            }}>
+                                {avgSavingsPercent}%
+                            </span>
+                        </div>
+                    }
                     icon={TrendingUp}
                     trend={null}
                     action={

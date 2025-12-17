@@ -10,9 +10,39 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
+import { ChevronRight } from 'lucide-react';
 
 const AnalyticsPage = () => {
     const { entries } = useData();
+
+    const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear().toString());
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
+
+    // Graph visibility state
+    const [visibleLines, setVisibleLines] = React.useState({
+        salary: true,
+        expense: true,
+        savings: true
+    });
+
+    const toggleLine = (key) => {
+        setVisibleLines(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    // Extract unique years from entries
+    const availableYears = useMemo(() => {
+        const years = new Set(entries.map(e => e.month.split(' ')[1]));
+        const currentYear = new Date().getFullYear().toString();
+        years.add(currentYear);
+        return Array.from(years).sort((a, b) => b - a); // Newest first
+    }, [entries]);
+
+    // Ensure selectedYear is valid (if not in list, default to newest)
+    React.useEffect(() => {
+        if (selectedYear !== 'All' && availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+            setSelectedYear(availableYears[0]);
+        }
+    }, [availableYears, selectedYear]);
 
     const data = useMemo(() => {
         // Helper to parse "Jan 2025" to a comparable value
@@ -32,8 +62,14 @@ const AnalyticsPage = () => {
             return (Number(y) * 12) + monthIndex;
         };
 
+
+        // Filter by selected year
+        const filtered = selectedYear === 'All'
+            ? entries
+            : entries.filter(entry => entry.month.endsWith(selectedYear));
+
         // Clone and sort chronologically (Oldest -> Newest)
-        const sorted = [...entries].sort((a, b) => getMonthValue(a.month) - getMonthValue(b.month));
+        const sorted = [...filtered].sort((a, b) => getMonthValue(a.month) - getMonthValue(b.month));
 
         return sorted.map(entry => ({
             name: entry.month,
@@ -41,7 +77,7 @@ const AnalyticsPage = () => {
             expense: Number(entry.expense) || 0,
             savings: Number(entry.savings) || 0
         }));
-    }, [entries]);
+    }, [entries, selectedYear]);
 
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', {
         style: 'currency',
@@ -51,8 +87,99 @@ const AnalyticsPage = () => {
 
     return (
         <div className="container" style={{ paddingBottom: '4rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Financial Trends</h2>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>Visualize your income, expenses, and savings over time.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                <div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Financial Trends</h2>
+                    <p style={{ color: 'var(--color-text-muted)' }}>Visualize your income, expenses, and savings over time.</p>
+                </div>
+
+                {/* Year Filter Dropdown */}
+                <div style={{ position: 'relative', minWidth: '120px' }}>
+                    <div
+                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                        className="input-field"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            background: 'var(--color-bg-card)',
+                            color: 'var(--color-text-main)',
+                            fontWeight: 500,
+                            padding: '0.5rem 1rem',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '8px'
+                        }}
+                    >
+                        <span>{selectedYear === 'All' ? 'All Years' : selectedYear}</span>
+                        <ChevronRight size={16} style={{ transform: isYearDropdownOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                    </div>
+                    {isYearDropdownOpen && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            right: 0,
+                            left: 0,
+                            background: 'var(--color-bg-surface)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '8px',
+                            marginTop: '4px',
+                            zIndex: 1000,
+                            boxShadow: 'var(--shadow-md)',
+                            maxHeight: '200px',
+                            overflowY: 'auto'
+                        }}>
+                            <div
+                                onClick={() => {
+                                    setSelectedYear('All');
+                                    setIsYearDropdownOpen(false);
+                                }}
+                                style={{
+                                    padding: '0.75rem 1rem',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s',
+                                    background: selectedYear === 'All' ? 'var(--color-bg-subtle)' : 'transparent',
+                                    color: selectedYear === 'All' ? 'var(--color-primary)' : 'var(--color-text-main)',
+                                    fontWeight: selectedYear === 'All' ? 600 : 400
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (selectedYear !== 'All') e.currentTarget.style.background = 'var(--color-bg-subtle)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (selectedYear !== 'All') e.currentTarget.style.background = 'transparent';
+                                }}
+                            >
+                                All Years
+                            </div>
+                            {availableYears.map(year => (
+                                <div
+                                    key={year}
+                                    onClick={() => {
+                                        setSelectedYear(year);
+                                        setIsYearDropdownOpen(false);
+                                    }}
+                                    style={{
+                                        padding: '0.75rem 1rem',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                        background: selectedYear === year ? 'var(--color-bg-subtle)' : 'transparent',
+                                        color: selectedYear === year ? 'var(--color-primary)' : 'var(--color-text-main)',
+                                        fontWeight: selectedYear === year ? 600 : 400
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (selectedYear !== year) e.currentTarget.style.background = 'var(--color-bg-subtle)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (selectedYear !== year) e.currentTarget.style.background = 'transparent';
+                                    }}
+                                >
+                                    {year}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <div className="card" style={{ height: '400px', width: '100%', padding: '1.5rem' }}>
                 {data.length > 0 ? (
@@ -86,7 +213,61 @@ const AnalyticsPage = () => {
                                 formatter={(value) => formatCurrency(value)}
                                 labelStyle={{ color: 'var(--color-text-main)', fontWeight: 600 }}
                             />
-                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                            <Legend
+                                content={() => (
+                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', paddingTop: '20px', userSelect: 'none' }}>
+                                        {[
+                                            { key: 'expense', label: 'Expense', color: '#ef4444' },
+                                            { key: 'salary', label: 'Salary', color: '#10b981' },
+                                            { key: 'savings', label: 'Savings', color: '#8b5cf6' }
+                                        ].map(({ key, label, color }) => {
+                                            const isActive = visibleLines[key];
+                                            return (
+                                                <div
+                                                    key={key}
+                                                    onClick={() => toggleLine(key)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.75rem',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {/* Toggle Switch */}
+                                                    <div style={{
+                                                        width: '36px',
+                                                        height: '20px',
+                                                        backgroundColor: isActive ? color : 'var(--color-border)',
+                                                        borderRadius: '999px',
+                                                        position: 'relative',
+                                                        transition: 'background-color 0.2s ease'
+                                                    }}>
+                                                        <div style={{
+                                                            width: '16px',
+                                                            height: '16px',
+                                                            backgroundColor: '#fff',
+                                                            borderRadius: '50%',
+                                                            position: 'absolute',
+                                                            top: '2px',
+                                                            left: isActive ? '18px' : '2px',
+                                                            transition: 'left 0.2s ease',
+                                                            boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                                        }} />
+                                                    </div>
+
+                                                    {/* Label */}
+                                                    <span style={{
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: 500,
+                                                        color: isActive ? 'var(--color-text-main)' : 'var(--color-text-muted)',
+                                                        transition: 'color 0.2s'
+                                                    }}>{label}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            />
                             <Line
                                 type="monotone"
                                 dataKey="salary"
@@ -95,6 +276,7 @@ const AnalyticsPage = () => {
                                 name="Salary"
                                 dot={{ r: 4, strokeWidth: 2 }}
                                 activeDot={{ r: 6 }}
+                                hide={!visibleLines.salary}
                             />
                             <Line
                                 type="monotone"
@@ -104,6 +286,7 @@ const AnalyticsPage = () => {
                                 name="Expense"
                                 dot={{ r: 4, strokeWidth: 2 }}
                                 activeDot={{ r: 6 }}
+                                hide={!visibleLines.expense}
                             />
                             <Line
                                 type="monotone"
@@ -113,6 +296,7 @@ const AnalyticsPage = () => {
                                 name="Savings"
                                 dot={{ r: 4, strokeWidth: 2 }}
                                 activeDot={{ r: 6 }}
+                                hide={!visibleLines.savings}
                             />
                         </LineChart>
                     </ResponsiveContainer>
