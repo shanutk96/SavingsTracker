@@ -22,23 +22,21 @@ const CreditCardPage = () => {
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
     const currentDate = new Date();
-    const [selectedMonth, setSelectedMonth] = useState(`${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`);
+    const [selectedMonthName, setSelectedMonthName] = useState(months[currentDate.getMonth()]);
+    const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
 
-    // Helper to generate month options (current month onwards)
-    const monthOptions = useMemo(() => {
-        const options = [];
+    // Derived full string for filtering
+    const selectedMonth = `${selectedMonthName} ${selectedYear}`;
+
+    // Year Options (Current Year - 1 to Current Year + 5)
+    // Same range as ExpensesPage for consistency
+    const yearOptions = useMemo(() => {
         const currentYear = currentDate.getFullYear();
-        const currentMonthIndex = currentDate.getMonth();
-
-        // 2 years ahead
-        for (let y = currentYear; y <= currentYear + 2; y++) {
-            months.forEach((m, index) => {
-                // If it's the current year, only show months >= current month
-                if (y === currentYear && index < currentMonthIndex) return;
-                options.push(`${m} ${y}`);
-            });
+        const years = [];
+        for (let i = -1; i <= 5; i++) {
+            years.push(currentYear + i);
         }
-        return options;
+        return years;
     }, []);
 
     // Local state for new item inputs - keyed by cardName to allow independent inputs
@@ -85,14 +83,20 @@ const CreditCardPage = () => {
     const [visibleCards, setVisibleCards] = useState([]);
 
     // Sync visible cards with data
-    useMemo(() => {
+    // When data changes (month switch or CRUD), we reset the view to exactly what's in the data.
+    // This removes "empty" manual cards if they aren't used, but ensures the view is always correct.
+    React.useEffect(() => {
         const dataCards = Object.keys(expensesByCard);
-        setVisibleCards(prev => [...new Set([...prev, ...dataCards])]);
+        setVisibleCards(dataCards);
     }, [expensesByCard]);
 
     const handleAddCard = () => {
         if (newCardName.trim()) {
-            setVisibleCards(prev => [...new Set([...prev, newCardName.trim()])]);
+            // Allow adding a card manually (it will stay until next data update/month switch)
+            setVisibleCards(prev => {
+                if (prev.includes(newCardName.trim())) return prev;
+                return [...prev, newCardName.trim()];
+            });
             setNewCardName('');
             setIsAddingCard(false);
         }
@@ -125,39 +129,63 @@ const CreditCardPage = () => {
                 isDanger
             />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)' }}>Credit Cards</h2>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Add and track monthly expenses for each credit card to know your total bill clearly.</p>
+            {/* Header */}
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Credit Cards</h2>
+                        <p style={{ color: 'var(--color-text-muted)' }}>Track your credit card spending and payments.</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <select
+                            value={selectedMonthName}
+                            onChange={(e) => setSelectedMonthName(e.target.value)}
+                            className="select-minimal"
+                            style={{
+                                padding: '0.5rem 2rem 0.5rem 1rem',
+                                appearance: 'none',
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 0.75rem center',
+                                backgroundSize: '1em',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '8px',
+                                background: 'var(--color-bg-card)',
+                                color: 'var(--color-text-main)',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {months.map(m => (
+                                <option key={m} value={m}>{m}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            className="select-minimal"
+                            style={{
+                                padding: '0.5rem 2rem 0.5rem 1rem',
+                                appearance: 'none',
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 0.75rem center',
+                                backgroundSize: '1em',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '8px',
+                                background: 'var(--color-bg-card)',
+                                color: 'var(--color-text-main)',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {yearOptions.map(y => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-                <select
-                    value={selectedMonth}
-                    onChange={(e) => {
-                        setSelectedMonth(e.target.value);
-                        setVisibleCards([]); // Reset visible checking on month change
-                    }}
-                    className="select-minimal"
-                    style={{
-                        padding: '0.5rem 2rem 0.5rem 1rem',
-                        appearance: 'none',
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'right 0.75rem center',
-                        backgroundSize: '1em',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '8px',
-                        background: 'var(--color-bg-card)',
-                        color: 'var(--color-text-main)',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                    }}
-                >
-                    {monthOptions.map(m => (
-                        <option key={m} value={m}>{m}</option>
-                    ))}
-                </select>
             </div>
-
             {/* Card Grid */}
             <div style={{
                 display: 'grid',

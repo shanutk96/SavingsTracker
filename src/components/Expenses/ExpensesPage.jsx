@@ -16,22 +16,21 @@ const ExpensesPage = () => {
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
     const currentDate = new Date();
-    const [selectedMonth, setSelectedMonth] = useState(`${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`);
+    const [selectedMonthName, setSelectedMonthName] = useState(months[currentDate.getMonth()]);
+    const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+
+    // Derived full string for filtering
+    const selectedMonth = `${selectedMonthName} ${selectedYear}`;
     const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
-    const monthOptions = useMemo(() => {
-        const options = [];
+    // Year Options (Current Year - 1 to Current Year + 5)
+    const yearOptions = useMemo(() => {
         const currentYear = currentDate.getFullYear();
-        const currentMonthIndex = currentDate.getMonth();
-
-        // Show current month onwards + next 2 years
-        for (let y = currentYear; y <= currentYear + 2; y++) {
-            months.forEach((m, index) => {
-                if (y === currentYear && index < currentMonthIndex) return;
-                options.push(`${m} ${y}`);
-            });
+        const years = [];
+        for (let i = -1; i <= 5; i++) {
+            years.push(currentYear + i);
         }
-        return options;
+        return years;
     }, []);
 
     // Filter Data
@@ -238,29 +237,55 @@ const ExpensesPage = () => {
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Expense</h2>
                         <p style={{ color: 'var(--color-text-muted)' }}>Record daily expenses and get a clear breakdown of your monthly spending.</p>
                     </div>
-                    <select
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="select-minimal"
-                        style={{
-                            padding: '0.5rem 2rem 0.5rem 1rem',
-                            appearance: 'none',
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                            backgroundRepeat: 'no-repeat',
-                            backgroundPosition: 'right 0.75rem center',
-                            backgroundSize: '1em',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: '8px',
-                            background: 'var(--color-bg-card)',
-                            color: 'var(--color-text-main)',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                        }}
-                    >
-                        {monthOptions.map(m => (
-                            <option key={m} value={m}>{m}</option>
-                        ))}
-                    </select>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <select
+                            value={selectedMonthName}
+                            onChange={(e) => setSelectedMonthName(e.target.value)}
+                            className="select-minimal"
+                            style={{
+                                padding: '0.5rem 2rem 0.5rem 1rem',
+                                appearance: 'none',
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 0.75rem center',
+                                backgroundSize: '1em',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '8px',
+                                background: 'var(--color-bg-card)',
+                                color: 'var(--color-text-main)',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {months.map(m => (
+                                <option key={m} value={m}>{m}</option>
+                            ))}
+                        </select>
+
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            className="select-minimal"
+                            style={{
+                                padding: '0.5rem 2rem 0.5rem 1rem',
+                                appearance: 'none',
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 0.75rem center',
+                                backgroundSize: '1em',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '8px',
+                                background: 'var(--color-bg-card)',
+                                color: 'var(--color-text-main)',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {yearOptions.map(y => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
+                    </div>
 
 
                     {/* Manage Categories Button */}
