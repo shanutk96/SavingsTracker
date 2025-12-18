@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import Button from '../UI/Button';
 import ConfirmModal from '../UI/ConfirmModal';
-import { Plus, Trash2, CheckSquare, Square, Calculator, Edit2, Check, X, CheckCircle, ArrowRight } from 'lucide-react';
+import Modal from '../UI/Modal';
+import { Plus, Trash2, CheckSquare, Square, Calculator, Edit2, Check, X, CheckCircle, ArrowRight, Settings } from 'lucide-react';
 
 const CreditCardPage = () => {
     const {
@@ -13,7 +14,11 @@ const CreditCardPage = () => {
         evaluateMathExpression,
         renameCardGroup,
         deleteCardGroup,
-        markCardGroupPaid
+        markCardGroupPaid,
+        cardsList,
+        addCard,
+        renameCard,
+        deleteCard
     } = useData();
 
     // Month Selection
@@ -59,11 +64,23 @@ const CreditCardPage = () => {
 
     const [newCardName, setNewCardName] = useState('');
     const [isAddingCard, setIsAddingCard] = useState(false);
+    const [hoveredCardName, setHoveredCardName] = useState(null);
 
     // Filter expenses for current month
     const currentMonthExpenses = useMemo(() => {
         return ccExpenses.filter(e => e.month === selectedMonth);
     }, [ccExpenses, selectedMonth]);
+
+    // Get suggestions from the centralized cardsList
+    // If cardsList is empty (new user), we might still have historical data if migration hasn't run?
+    // Migration runs on load. So cardsList should be truthy.
+    const cardSuggestions = useMemo(() => {
+        // If cardsList has items, use it.
+        // Fallback to history if empty? (Safety net)
+        if (cardsList && cardsList.length > 0) return cardsList;
+        const unique = new Set(ccExpenses.map(e => e.cardName));
+        return Array.from(unique).sort();
+    }, [cardsList, ccExpenses]);
 
     // Group by Card Name
     const expensesByCard = useMemo(() => {
@@ -97,6 +114,13 @@ const CreditCardPage = () => {
                 if (prev.includes(newCardName.trim())) return prev;
                 return [...prev, newCardName.trim()];
             });
+
+            // Also add to the global list if not present
+            // Safety check: cardsList might be undefined initially
+            if (cardsList && !cardsList.includes(newCardName.trim())) {
+                addCard(newCardName.trim());
+            }
+
             setNewCardName('');
             setIsAddingCard(false);
         }
@@ -114,6 +138,32 @@ const CreditCardPage = () => {
             deleteCardGroup(confirmConfig.cardName, selectedMonth);
         }
         setConfirmConfig({ isOpen: false, cardName: null });
+    };
+
+    // Card Manager State
+    const [isManagerOpen, setIsManagerOpen] = useState(false);
+    const [editingCardName, setEditingCardName] = useState(null);
+    const [tempCardName, setTempCardName] = useState('');
+    const [deleteListConfig, setDeleteListConfig] = useState({ isOpen: false, cardName: null });
+
+    const handleSaveRename = async (oldName) => {
+        if (tempCardName.trim() && tempCardName !== oldName) {
+            await renameCard(oldName, tempCardName.trim());
+            setEditingCardName(null);
+        }
+    };
+
+
+
+    const promptDeleteCardFromList = (cardName) => {
+        setDeleteListConfig({ isOpen: true, cardName });
+    };
+
+    const confirmDeleteCardList = async () => {
+        if (deleteListConfig.cardName) {
+            await deleteCard(deleteListConfig.cardName);
+        }
+        setDeleteListConfig({ isOpen: false, cardName: null });
     };
 
     return (
@@ -184,52 +234,178 @@ const CreditCardPage = () => {
                             ))}
                         </select>
                     </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                        <button
+                            onClick={() => setIsManagerOpen(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                background: 'transparent',
+                                border: '1px solid var(--color-border)',
+                                padding: '0.4rem 0.8rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                color: 'var(--color-text-muted)',
+                                fontSize: '0.9rem',
+                                fontWeight: 500
+                            }}
+                        >
+                            <Settings size={16} /> Manage Cards
+                        </button>
+                    </div>
                 </div>
-            </div>
-            {/* Card Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                gap: '1.5rem',
-                alignItems: 'start'
-            }}>
-                {visibleCards.map(cardName => (
-                    <CardGroup
-                        key={cardName}
-                        cardName={cardName}
-                        items={expensesByCard[cardName] || []}
-                        month={selectedMonth}
-                        onAdd={(item) => addCCExpense({ ...item, cardName, month: selectedMonth })}
-                        onUpdate={updateCCExpense}
-                        onDelete={deleteCCExpense}
 
-                        onRename={(newName) => renameCardGroup(cardName, newName, selectedMonth)}
-                        onDeleteGroup={() => promptDeleteCard(cardName)}
-                        onMarkPaid={(isPaid) => markCardGroupPaid(cardName, selectedMonth, isPaid)}
-                        evaluateMath={evaluateMathExpression}
-                    />
-                ))}
+                {/* Card Manager Modal */}
+                <Modal isOpen={isManagerOpen} onClose={() => setIsManagerOpen(false)} title="Manage Cards">
+                    <div style={{ padding: '1.5rem' }}>
+                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                            Edit or delete your saved cards. Renaming a card will update it across all past transactions globally.
+                        </p>
 
-                {/* Add New Card Group */}
-                <div className="card" style={{ padding: '1.5rem', borderStyle: 'dashed', borderColor: 'var(--color-border)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {isAddingCard ? (
-                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                            <input
-                                autoFocus
-                                type="text"
-                                placeholder="Card Name (e.g. HDFC)"
-                                className="input-field"
-                                value={newCardName}
-                                onChange={(e) => setNewCardName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddCard()}
-                            />
-                            <Button onClick={handleAddCard} size="sm">Add</Button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {cardSuggestions.map(card => (
+                                <div
+                                    key={card}
+                                    onMouseEnter={() => setHoveredCardName(card)}
+                                    onMouseLeave={() => setHoveredCardName(null)}
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '0.75rem',
+                                        background: 'var(--color-bg-surface)',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: '8px',
+                                        transition: 'background-color 0.2s ease'
+                                    }}
+                                >
+                                    {editingCardName === card ? (
+                                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                value={tempCardName}
+                                                onChange={(e) => setTempCardName(e.target.value)}
+                                                className="input-field"
+                                                style={{ padding: '0.4rem' }}
+                                            />
+                                            <button onClick={() => handleSaveRename(card)} style={{ background: 'var(--color-success)', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem', cursor: 'pointer' }}><Check size={16} /></button>
+                                            <button onClick={() => setEditingCardName(null)} style={{ background: 'var(--color-text-muted)', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem', cursor: 'pointer' }}><X size={16} /></button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span style={{ fontWeight: 500 }}>{card}</span>
+                                            {/* Action buttons - only visible on hover */}
+                                            <div style={{
+                                                display: 'flex',
+                                                gap: '0.5rem',
+                                                opacity: hoveredCardName === card ? 1 : 0,
+                                                pointerEvents: hoveredCardName === card ? 'auto' : 'none',
+                                                transition: 'opacity 0.2s ease'
+                                            }}>
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingCardName(card);
+                                                        setTempCardName(card);
+                                                    }}
+                                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}
+                                                    title="Rename"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => promptDeleteCardFromList(card)}
+                                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-danger)' }}
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                            {cardSuggestions.length === 0 && (
+                                <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>No saved cards yet.</div>
+                            )}
                         </div>
-                    ) : (
-                        <Button variant="ghost" onClick={() => setIsAddingCard(true)}>
-                            <Plus size={18} /> Add New Card Group
-                        </Button>
-                    )}
+                    </div>
+                </Modal>
+
+                {/* Delete Confirmation for List */}
+                <ConfirmModal
+                    isOpen={deleteListConfig.isOpen}
+                    onClose={() => setDeleteListConfig({ isOpen: false, cardName: null })}
+                    onConfirm={confirmDeleteCardList}
+                    title="Delete Card"
+                    message={`Are you sure you want to delete "${deleteListConfig.cardName}" from your saved list? Existing transactions will remain, but it won't be suggested anymore.`}
+                    confirmText="Delete"
+                    isDanger
+                />
+                {/* Card Grid */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                    gap: '1.5rem',
+                    alignItems: 'start'
+                }}>
+                    {visibleCards.map(cardName => (
+                        <CardGroup
+                            key={cardName}
+                            cardName={cardName}
+                            items={expensesByCard[cardName] || []}
+                            month={selectedMonth}
+                            onAdd={(item) => addCCExpense({ ...item, cardName, month: selectedMonth })}
+                            onUpdate={updateCCExpense}
+                            onDelete={deleteCCExpense}
+
+                            onRename={(newName) => renameCardGroup(cardName, newName, selectedMonth)}
+                            onDeleteGroup={() => promptDeleteCard(cardName)}
+                            onMarkPaid={(isPaid) => markCardGroupPaid(cardName, selectedMonth, isPaid)}
+                            evaluateMath={evaluateMathExpression}
+                        />
+                    ))}
+
+                    {/* Add New Card Group */}
+                    <div className="card" style={{ padding: '1.5rem', borderStyle: 'dashed', borderColor: 'var(--color-border)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {isAddingCard ? (
+                            <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    list="card-suggestions"
+                                    placeholder="Card Name (e.g. HDFC)"
+                                    className="input-field"
+                                    value={newCardName}
+                                    onChange={(e) => setNewCardName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddCard()}
+                                />
+                                <datalist id="card-suggestions">
+                                    {cardSuggestions.filter(c => !visibleCards.includes(c)).map(card => (
+                                        <option key={card} value={card} />
+                                    ))}
+                                </datalist>
+                                <Button onClick={handleAddCard} size="sm">Add</Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        setIsAddingCard(false);
+                                        setNewCardName('');
+                                    }}
+                                    style={{ padding: '0.5rem' }}
+                                >
+                                    <X size={20} />
+                                </Button>
+                            </div>
+                        ) : (
+                            <Button variant="ghost" onClick={() => setIsAddingCard(true)}>
+                                <Plus size={18} /> Add New Card Group
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

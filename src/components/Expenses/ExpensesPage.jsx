@@ -86,12 +86,18 @@ const ExpensesPage = () => {
     // but we can still sort it or ensure uniqueness if needed.
     // Actually, categoriesList from Context is sufficient as the source of truth.
     // Compute all unique categories dynamically
+    // Compute all unique categories dynamically
     const allCategories = useMemo(() => {
-        // Strict Source of Truth: categoriesList from Firestore.
-        // This ensures that when a user deletes a category, it stays deleted from the UI,
-        // even if historical transactions still use it.
-        return (categoriesList || []).sort();
-    }, [categoriesList]);
+        // Source of Truth: categoriesList from Firestore.
+        // Fallback: If list is empty (e.g. fresh migration or sync error), derive from history.
+        if (categoriesList && categoriesList.length > 0) {
+            return categoriesList.sort();
+        }
+
+        // Fallback logic
+        const derived = [...new Set(dailyExpenses.map(e => e.category))].filter(Boolean).sort();
+        return derived;
+    }, [categoriesList, dailyExpenses]);
 
     const handleRenameSubmit = async (oldName) => {
         if (!newCategoryName.trim() || newCategoryName === oldName) {

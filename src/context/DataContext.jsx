@@ -28,6 +28,8 @@ export const DataProvider = ({ children }) => {
     const [ccExpenses, setCcExpenses] = useState([]);
     const [dailyExpenses, setDailyExpenses] = useState([]);
     const [categoriesList, setCategoriesList] = useState([]);
+    const [cardsList, setCardsList] = useState([]); // List of saved card names
+    const [deletedCards, setDeletedCards] = useState([]); // Track explicitly deleted cards
 
     // Real-time Data Sync
     useEffect(() => {
@@ -46,17 +48,105 @@ export const DataProvider = ({ children }) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setInitialBalance(data.initialBalance || 0);
+                setCategoriesList(data.categories || []);
 
-                if (data.categories) {
-                    setCategoriesList(data.categories);
-                } else {
-                    // Initialize empty list for new users
-                    // We explicitly set it to empty array so we know they are initialized
-                    setDoc(userDocRef, { categories: [] }, { merge: true });
-                    setCategoriesList([]);
-                }
+                setCardsList(data.cards || []);
+                setDeletedCards(data.deletedCards || []);
+            } else {
+                // Initialize empty doc for new users
+                setDoc(userDocRef, {
+                    initialBalance: 0,
+                    categories: [],
+
+                    cards: [],
+                    deletedCards: []
+                }, { merge: true });
             }
         });
+
+        // ... (omitted middle parts, applying changes via separate blocks if needed, or I can try do multiple chunks)
+
+        const addCard = async (cardName) => {
+            if (!user) return;
+            const userDocRef = doc(db, 'users', user.uid);
+            await setDoc(userDocRef, {
+                cards: arrayUnion(cardName)
+            }, { merge: true });
+        };
+
+        // ...
+
+        const renameCard = async (oldName, newName) => {
+            if (!user) return;
+
+            // 1. Batch Update all expenses with this card name GLOBALLY
+            const q = query(
+                collection(db, 'users', user.uid, 'cc_expenses'),
+                where('cardName', '==', oldName)
+            );
+
+            const snapshot = await getDocs(q);
+            const batch = writeBatch(db);
+
+            snapshot.docs.forEach(doc => {
+                batch.update(doc.ref, { cardName: newName });
+            });
+
+            // 2. Update the list if necessary
+            if (cardsList.includes(oldName)) {
+                const updatedList = cardsList.map(c => c === oldName ? newName : c);
+                const userDocRef = doc(db, 'users', user.uid);
+                const unique = [...new Set(updatedList)].sort();
+                // Use set with merge to ensure doc exists
+                batch.set(userDocRef, { cards: unique }, { merge: true });
+            }
+
+            await batch.commit();
+        };
+
+        // ...
+
+        const renameCategory = async (oldName, newName) => {
+            if (!user) return;
+
+            // Find all expenses with the old category name
+            const q = query(
+                collection(db, 'users', user.uid, 'daily_expenses'),
+                where('category', '==', oldName)
+            );
+
+            const snapshot = await getDocs(q);
+            const batch = writeBatch(db);
+
+            // Update all matching expenses
+            snapshot.docs.forEach(doc => {
+                batch.update(doc.ref, { category: newName });
+            });
+
+            // Also update categoriesList if the old name was in there
+            // Note: Even if not in categoriesList, if we have it in derived list, we might want to ensure it's in the persisted list now?
+            // But for now, stick to simple rename logic.
+            if (categoriesList.includes(oldName)) {
+                const userRef = doc(db, 'users', user.uid);
+                const newCategories = categoriesList.map(c => c === oldName ? newName : c);
+                const uniqueCategories = [...new Set(newCategories)];
+
+                // Use set with merge
+                batch.set(userRef, {
+                    categories: uniqueCategories
+                }, { merge: true });
+            }
+
+            await batch.commit();
+        };
+
+        const addCategory = async (categoryName) => {
+            if (!user || !categoryName) return;
+            const userRef = doc(db, 'users', user.uid);
+            await setDoc(userRef, {
+                categories: arrayUnion(categoryName)
+            }, { merge: true });
+        };
 
         // 2. Listen to Entries Subcollection
         const entriesQuery = query(collection(db, 'users', user.uid, 'entries'));
@@ -107,6 +197,50 @@ export const DataProvider = ({ children }) => {
         };
     }, [user]);
 
+    // Self-Healing: Restore categories from history if list is empty but data exists
+    useEffect(() => {
+        if (!user) return; // Wait for loading? We don't have a loading state exposed, checking arrays.
+
+        // If categories are empty, but we have expenses...
+        if (categoriesList.length === 0 && dailyExpenses.length > 0) {
+            const historyCategories = [...new Set(dailyExpenses.map(e => e.category))].filter(c => c && typeof c === 'string');
+
+            if (historyCategories.length > 0) {
+                console.log("Auto-restoring categories from history:", historyCategories);
+                const userRef = doc(db, 'users', user.uid);
+                // Use updateDoc to avoid overwriting other fields
+                updateDoc(userRef, {
+                    categories: historyCategories.sort()
+                }).catch(err => console.error("Failed to restore categories:", err));
+            }
+        }
+    }, [user, categoriesList.length, dailyExpenses.length]);
+
+    // Self-Healing: Restore cards from history if list is incomplete or empty
+    useEffect(() => {
+        if (!user) return;
+
+        // Calculate all unique card names from history
+        const historyCards = [...new Set(ccExpenses.map(e => e.cardName))].filter(c => c && typeof c === 'string');
+
+        // Find cards that are in history but NOT in our saved list
+        // Find cards that are in history but NOT in our saved list AND NOT explicitly deleted
+        const missingCards = historyCards.filter(c => !cardsList.includes(c) && !deletedCards.includes(c));
+
+        if (missingCards.length > 0) {
+            console.log("Found missing cards in history, auto-merging:", missingCards);
+
+            // Create a new merged list
+            const mergedList = [...new Set([...cardsList, ...missingCards])].sort();
+
+            const userRef = doc(db, 'users', user.uid);
+            // Use set with merge to ensure doc exists and we update cards
+            setDoc(userRef, {
+                cards: mergedList
+            }, { merge: true }).catch(err => console.error("Failed to restore cards:", err));
+        }
+    }, [user, cardsList, ccExpenses, deletedCards]);
+
 
     // Calculate moving totals dynamically
     const processedEntries = useMemo(() => {
@@ -148,6 +282,40 @@ export const DataProvider = ({ children }) => {
         // 3. Return Descending (Newest First) for Display
         return calculated.reverse();
     }, [entries, initialBalance]);
+
+    // Migration Effect for Cards
+    useEffect(() => {
+        if (!user || !db || cardsList.length > 0) return; // Already loaded or no user
+
+        // This runs only towards the start if cardsList is empty. 
+        // We check if the user doc explicitly has 'cards' field check was done in onSnapshot.
+        // Actually, onSnapshot sets it to [], so we need a flag or check if we ALREADY checked.
+        // Let's rely on a manual "seed" action if we want to be safe, OR:
+        // Check "cards" field existence in the snapshot.
+        // Simplified: We'll add a helper `seedCardsFromHistory` that runs if the user has NO cards list defined.
+        // But since we can't easily distinguish "empty list" from "undefined" in state, 
+        // let's just expose a method or rely on the fact that if they have 0 cards, suggestions will be empty until they add one.
+        // The user EXPECTS auto-import.
+        // Let's do it: Query all cc_expenses, extract unique names, save to user doc.
+        const migrateCards = async () => {
+            const userRef = doc(db, 'users', user.uid);
+            const snap = await getDoc(userRef);
+            if (snap.exists() && !snap.data().cards) {
+                // Only migrate if 'cards' field is strictly MISSING
+                const q = query(collection(db, 'users', user.uid, 'cc_expenses'));
+                const querySnapshot = await getDocs(q);
+                const uniqueCards = new Set();
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.cardName) uniqueCards.add(data.cardName);
+                });
+                const cardsArray = Array.from(uniqueCards).sort();
+                await setDoc(userRef, { cards: cardsArray }, { merge: true });
+                // The onSnapshot will pick this up and setCardsList
+            }
+        };
+        migrateCards();
+    }, [user, db]);
 
 
     // Firestore Actions
@@ -244,6 +412,14 @@ export const DataProvider = ({ children }) => {
         });
 
         await batch.commit();
+
+        // Also update the Global Card List if the old name was in it
+        if (cardsList.includes(oldName)) {
+            const updatedList = cardsList.map(c => c === oldName ? newName : c);
+            const userDocRef = doc(db, 'users', user.uid); // Ensure this is defined
+            await updateDoc(userDocRef, { cards: updatedList });
+            // setCardsList is handled by snapshot
+        }
     };
 
     const deleteCardGroup = async (cardName, month) => {
@@ -269,6 +445,51 @@ export const DataProvider = ({ children }) => {
         const snapshot = await getDocs(q);
         const batch = writeBatch(db);
         snapshot.docs.forEach(doc => batch.update(doc.ref, { isChecked: isPaid }));
+        await batch.commit();
+    };
+
+    const addCard = async (cardName) => {
+        if (!user) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        await updateDoc(userDocRef, {
+            cards: arrayUnion(cardName)
+        });
+    };
+
+    const deleteCard = async (cardName) => {
+        if (!user) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        await updateDoc(userDocRef, {
+            cards: arrayRemove(cardName),
+            deletedCards: arrayUnion(cardName)
+        });
+    };
+
+    const renameCard = async (oldName, newName) => {
+        if (!user) return;
+
+        // 1. Batch Update all expenses with this card name GLOBALLY
+        const q = query(
+            collection(db, 'users', user.uid, 'cc_expenses'),
+            where('cardName', '==', oldName)
+        );
+
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+
+        snapshot.docs.forEach(doc => {
+            batch.update(doc.ref, { cardName: newName });
+        });
+
+        // 2. Update the list if necessary
+        if (cardsList.includes(oldName)) {
+            const updatedList = cardsList.map(c => c === oldName ? newName : c);
+            const userDocRef = doc(db, 'users', user.uid);
+            // Ensure unique and sorted?
+            const unique = [...new Set(updatedList)].sort();
+            batch.update(userDocRef, { cards: unique });
+        }
+
         await batch.commit();
     };
 
@@ -386,9 +607,12 @@ export const DataProvider = ({ children }) => {
             updateDailyExpense,
             deleteDailyExpense,
             renameCategory,
-            categoriesList,
             addCategory,
-            deleteCategory
+            deleteCategory,
+            cardsList,
+            addCard,
+            deleteCard,
+            renameCard
         }}>
             {children}
         </DataContext.Provider>
