@@ -238,12 +238,12 @@ const ExpensesPage = () => {
 
             {/* Header */}
             <div style={{ marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
+                <div className="flex-responsive" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ marginBottom: '1rem' }}>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Expense</h2>
                         <p style={{ color: 'var(--color-text-muted)' }}>Record daily expenses and get a clear breakdown of your monthly spending.</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <select
                             value={selectedMonthName}
                             onChange={(e) => setSelectedMonthName(e.target.value)}

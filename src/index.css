@@ -282,3 +282,42 @@ tr:hover td {
 .card-group-header:hover .header-edit-btn {
   opacity: 1;
 }
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  /* Stack flex containers vertically on mobile */
+  .flex-responsive {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem !important;
+  }
+  
+  /* Ensure children take full width */
+  .flex-responsive > * {
+    width: 100%;
+  }
+
+  /* Specific fix for the top header actions (Filter + Set Initial) */
+  .header-controls {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 1rem !important;
+    width: 100%;
+  }
+  
+  .header-controls > div,
+  .header-controls > button {
+    width: 100%;
+    justify-content: center; /* Center the button content */
+  }
+
+  /* Adjust the filter dropdown container specifically */
+  .filter-container {
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .filter-container select {
+    flex-grow: 1;
+  }
+}

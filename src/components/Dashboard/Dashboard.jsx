@@ -105,15 +105,15 @@ const Dashboard = () => {
 
     return (
         <div className="container" style={{ paddingBottom: '4rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div>
+            <div className="flex-responsive" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div style={{ marginBottom: '1rem' }}> {/* Margin bottom for mobile stack */}
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)' }}>Overview</h2>
                     <p style={{ color: 'var(--color-text-muted)' }}>Track your financial progress</p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div className="header-controls" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     {/* Salary Filter (Global for Averages) */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>Filter Avg:</span>
+                    <div className="filter-container" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>Filter Avg:</span>
                         <select
                             value={salaryFilter}
                             onChange={(e) => setSalaryFilter(e.target.value)}
@@ -187,10 +187,10 @@ const Dashboard = () => {
             </div>
 
             <div style={{ background: 'var(--color-bg-surface)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div className="flex-responsive" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text-main)', margin: 0 }}>Monthly Breakdown</h3>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="header-controls" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <Button onClick={handleOpenAdd} style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
                             <Plus size={16} style={{ marginRight: '0.5rem' }} />
                             Add Entry
