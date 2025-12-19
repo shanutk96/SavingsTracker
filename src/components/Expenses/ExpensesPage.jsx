@@ -7,7 +7,7 @@ import Modal from '../UI/Modal';
 import ConfirmModal from '../UI/ConfirmModal';
 
 const ExpensesPage = () => {
-    const { dailyExpenses, addDailyExpense, deleteDailyExpense, updateDailyExpense, evaluateMathExpression, renameCategory, categoriesList, addCategory, deleteCategory } = useData();
+    const { dailyExpenses, addDailyExpense, deleteDailyExpense, updateDailyExpense, evaluateMathExpression, renameCategory, categoriesList, addCategory, deleteCategory, deletedCategories } = useData();
     const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#71B37C'];
 
     // Month Selection
@@ -96,8 +96,14 @@ const ExpensesPage = () => {
 
         // Fallback logic
         const derived = [...new Set(dailyExpenses.map(e => e.category))].filter(Boolean).sort();
+
+        // Filter out explicitly deleted categories from the fallback list
+        if (deletedCategories && deletedCategories.length > 0) {
+            return derived.filter(c => !deletedCategories.includes(c));
+        }
+
         return derived;
-    }, [categoriesList, dailyExpenses]);
+    }, [categoriesList, dailyExpenses, deletedCategories]);
 
     const handleRenameSubmit = async (oldName) => {
         if (!newCategoryName.trim() || newCategoryName === oldName) {
@@ -122,20 +128,7 @@ const ExpensesPage = () => {
         });
     };
 
-    const handleAddCategory = async () => {
-        if (!newCategoryName.trim()) return;
-        if (allCategories.includes(newCategoryName)) {
-            alert('Category already exists');
-            return;
-        }
-        try {
-            await addCategory(newCategoryName);
-            setNewCategoryName('');
-        } catch (error) {
-            console.error("Add category failed:", error);
-            alert("Failed to add category: " + error.message);
-        }
-    };
+
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
@@ -722,34 +715,7 @@ const ExpensesPage = () => {
             <Modal isOpen={isManagerOpen} onClose={() => setIsManagerOpen(false)} title="Manage Categories">
                 <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
 
-                    {/* Add New Category Input */}
-                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
-                        <input
-                            type="text"
-                            placeholder="Add new category..."
-                            className="input-field"
-                            value={!editingCategory ? newCategoryName : ''} // Only show if not editing
-                            onChange={(e) => !editingCategory && setNewCategoryName(e.target.value)}
-                            disabled={!!editingCategory}
-                            style={{ flex: 1 }}
-                        />
-                        <button
-                            onClick={handleAddCategory}
-                            disabled={!!editingCategory || !newCategoryName.trim()}
-                            style={{
-                                background: 'var(--color-primary)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                padding: '0 1rem',
-                                cursor: 'pointer',
-                                fontWeight: 600,
-                                opacity: (!!editingCategory || !newCategoryName.trim()) ? 0.5 : 1
-                            }}
-                        >
-                            <Plus size={20} />
-                        </button>
-                    </div>
+
 
                     <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
                         Retire or rename categories. Renaming a category will update all historical transactions.

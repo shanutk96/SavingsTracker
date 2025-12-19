@@ -11,6 +11,7 @@ import {
     deleteDoc,
     writeBatch,
     getDocs,
+    getDoc,
     where,
     arrayUnion,
     arrayRemove
@@ -30,6 +31,7 @@ export const DataProvider = ({ children }) => {
     const [categoriesList, setCategoriesList] = useState([]);
     const [cardsList, setCardsList] = useState([]); // List of saved card names
     const [deletedCards, setDeletedCards] = useState([]); // Track explicitly deleted cards
+    const [deletedCategories, setDeletedCategories] = useState([]); // Track explicitly deleted categories
 
     // Real-time Data Sync
     useEffect(() => {
@@ -52,6 +54,7 @@ export const DataProvider = ({ children }) => {
 
                 setCardsList(data.cards || []);
                 setDeletedCards(data.deletedCards || []);
+                setDeletedCategories(data.deletedCategories || []);
             } else {
                 // Initialize empty doc for new users
                 setDoc(userDocRef, {
@@ -59,94 +62,19 @@ export const DataProvider = ({ children }) => {
                     categories: [],
 
                     cards: [],
-                    deletedCards: []
+                    deletedCards: [],
+                    deletedCategories: []
                 }, { merge: true });
             }
         });
 
         // ... (omitted middle parts, applying changes via separate blocks if needed, or I can try do multiple chunks)
 
-        const addCard = async (cardName) => {
-            if (!user) return;
-            const userDocRef = doc(db, 'users', user.uid);
-            await setDoc(userDocRef, {
-                cards: arrayUnion(cardName)
-            }, { merge: true });
-        };
+
 
         // ...
 
-        const renameCard = async (oldName, newName) => {
-            if (!user) return;
 
-            // 1. Batch Update all expenses with this card name GLOBALLY
-            const q = query(
-                collection(db, 'users', user.uid, 'cc_expenses'),
-                where('cardName', '==', oldName)
-            );
-
-            const snapshot = await getDocs(q);
-            const batch = writeBatch(db);
-
-            snapshot.docs.forEach(doc => {
-                batch.update(doc.ref, { cardName: newName });
-            });
-
-            // 2. Update the list if necessary
-            if (cardsList.includes(oldName)) {
-                const updatedList = cardsList.map(c => c === oldName ? newName : c);
-                const userDocRef = doc(db, 'users', user.uid);
-                const unique = [...new Set(updatedList)].sort();
-                // Use set with merge to ensure doc exists
-                batch.set(userDocRef, { cards: unique }, { merge: true });
-            }
-
-            await batch.commit();
-        };
-
-        // ...
-
-        const renameCategory = async (oldName, newName) => {
-            if (!user) return;
-
-            // Find all expenses with the old category name
-            const q = query(
-                collection(db, 'users', user.uid, 'daily_expenses'),
-                where('category', '==', oldName)
-            );
-
-            const snapshot = await getDocs(q);
-            const batch = writeBatch(db);
-
-            // Update all matching expenses
-            snapshot.docs.forEach(doc => {
-                batch.update(doc.ref, { category: newName });
-            });
-
-            // Also update categoriesList if the old name was in there
-            // Note: Even if not in categoriesList, if we have it in derived list, we might want to ensure it's in the persisted list now?
-            // But for now, stick to simple rename logic.
-            if (categoriesList.includes(oldName)) {
-                const userRef = doc(db, 'users', user.uid);
-                const newCategories = categoriesList.map(c => c === oldName ? newName : c);
-                const uniqueCategories = [...new Set(newCategories)];
-
-                // Use set with merge
-                batch.set(userRef, {
-                    categories: uniqueCategories
-                }, { merge: true });
-            }
-
-            await batch.commit();
-        };
-
-        const addCategory = async (categoryName) => {
-            if (!user || !categoryName) return;
-            const userRef = doc(db, 'users', user.uid);
-            await setDoc(userRef, {
-                categories: arrayUnion(categoryName)
-            }, { merge: true });
-        };
 
         // 2. Listen to Entries Subcollection
         const entriesQuery = query(collection(db, 'users', user.uid, 'entries'));
@@ -199,22 +127,25 @@ export const DataProvider = ({ children }) => {
 
     // Self-Healing: Restore categories from history if list is empty but data exists
     useEffect(() => {
-        if (!user) return; // Wait for loading? We don't have a loading state exposed, checking arrays.
+        if (!user) return;
 
         // If categories are empty, but we have expenses...
         if (categoriesList.length === 0 && dailyExpenses.length > 0) {
             const historyCategories = [...new Set(dailyExpenses.map(e => e.category))].filter(c => c && typeof c === 'string');
 
-            if (historyCategories.length > 0) {
-                console.log("Auto-restoring categories from history:", historyCategories);
+            // Filter out explicitly deleted categories
+            const validCategories = historyCategories.filter(c => !deletedCategories.includes(c));
+
+            if (validCategories.length > 0) {
+                console.log("Auto-restoring categories from history:", validCategories);
                 const userRef = doc(db, 'users', user.uid);
                 // Use updateDoc to avoid overwriting other fields
                 updateDoc(userRef, {
-                    categories: historyCategories.sort()
+                    categories: validCategories.sort()
                 }).catch(err => console.error("Failed to restore categories:", err));
             }
         }
-    }, [user, categoriesList.length, dailyExpenses.length]);
+    }, [user, categoriesList.length, dailyExpenses.length, deletedCategories]);
 
     // Self-Healing: Restore cards from history if list is incomplete or empty
     useEffect(() => {
@@ -536,16 +467,13 @@ export const DataProvider = ({ children }) => {
         // Also update categoriesList if the old name was in there
         if (categoriesList.includes(oldName)) {
             const userRef = doc(db, 'users', user.uid);
-
-            // Avoid arrayRemove/arrayUnion conflict in same batch by calculating new list
             const newCategories = categoriesList.map(c => c === oldName ? newName : c);
-
-            // Ensure uniqueness just in case
             const uniqueCategories = [...new Set(newCategories)];
 
-            batch.update(userRef, {
+            // Use set with merge
+            batch.set(userRef, {
                 categories: uniqueCategories
-            });
+            }, { merge: true });
         }
 
         await batch.commit();
@@ -554,18 +482,22 @@ export const DataProvider = ({ children }) => {
     const addCategory = async (categoryName) => {
         if (!user || !categoryName) return;
         const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, {
-            categories: arrayUnion(categoryName)
-        });
+        await setDoc(userRef, {
+            categories: arrayUnion(categoryName),
+            deletedCategories: arrayRemove(categoryName) // Ensure we un-delete it if it was deleted
+        }, { merge: true });
     };
 
     const deleteCategory = async (categoryName) => {
         if (!user || !categoryName) return;
         const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, {
-            categories: arrayRemove(categoryName)
-        });
+        await setDoc(userRef, {
+            categories: arrayRemove(categoryName),
+            deletedCategories: arrayUnion(categoryName) // Track deletion
+        }, { merge: true });
     };
+
+
 
     // Helper to evaluate math expressions
     const evaluateMathExpression = (expression) => {
@@ -612,7 +544,8 @@ export const DataProvider = ({ children }) => {
             cardsList,
             addCard,
             deleteCard,
-            renameCard
+            renameCard,
+            deletedCategories
         }}>
             {children}
         </DataContext.Provider>
