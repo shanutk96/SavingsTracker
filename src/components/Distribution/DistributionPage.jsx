@@ -17,7 +17,7 @@ const DistributionPage = () => {
     const [isEditing, setIsEditing] = useState(null);
     const formRef = useRef(null);
     const nameInputRef = useRef(null);
-    const [formData, setFormData] = useState({ name: '', amount: '' });
+    const [formData, setFormData] = useState({ name: '', amount: '', isSalaryAccount: false });
     const [sortConfig, setSortConfig] = useState({ key: 'amount', direction: 'desc' });
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
@@ -88,29 +88,36 @@ const DistributionPage = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.name || formData.amount === '') return;
 
         const calculatedAmount = evaluateExpression(formData.amount);
+        const newData = {
+            name: formData.name,
+            amount: calculatedAmount,
+            isSalaryAccount: formData.isSalaryAccount
+        };
+
+        // If setting this as salary account, unset others
+        if (formData.isSalaryAccount) {
+            const promises = distributions
+                .filter(d => d.isSalaryAccount && d.id !== isEditing)
+                .map(d => updateDistribution(d.id, { ...d, isSalaryAccount: false }));
+            await Promise.all(promises);
+        }
 
         if (isEditing) {
-            updateDistribution(isEditing, {
-                name: formData.name,
-                amount: calculatedAmount
-            });
+            await updateDistribution(isEditing, newData);
             setIsEditing(null);
         } else {
-            addDistribution({
-                name: formData.name,
-                amount: calculatedAmount
-            });
+            await addDistribution(newData);
         }
-        setFormData({ name: '', amount: '' });
+        setFormData({ name: '', amount: '', isSalaryAccount: false });
     };
 
     const handleEdit = (item) => {
-        setFormData({ name: item.name, amount: item.amount });
+        setFormData({ name: item.name, amount: item.amount, isSalaryAccount: item.isSalaryAccount || false });
         setIsEditing(item.id);
         // Scroll to form and focus
         formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -135,7 +142,7 @@ const DistributionPage = () => {
 
     const handleCancel = () => {
         setIsEditing(null);
-        setFormData({ name: '', amount: '' });
+        setFormData({ name: '', amount: '', isSalaryAccount: false });
     };
 
     return (
@@ -212,6 +219,20 @@ const DistributionPage = () => {
                             required
                         />
                     </div>
+
+                    <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                        <input
+                            type="checkbox"
+                            id="salaryAccount"
+                            checked={formData.isSalaryAccount}
+                            onChange={(e) => setFormData({ ...formData, isSalaryAccount: e.target.checked })}
+                            style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="salaryAccount" style={{ cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 }}>
+                            Set as Primary Salary Account
+                        </label>
+                    </div>
+
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                         {isEditing && (
                             <Button type="button" variant="ghost" onClick={handleCancel}>
@@ -242,52 +263,77 @@ const DistributionPage = () => {
                             >
                                 Amount {sortConfig.key === 'amount' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                             </th>
-                            <th style={{ textAlign: 'right', padding: '1rem', width: '100px' }}>Actions</th>
+                            <th style={{ textAlign: 'right', padding: '1rem', color: 'var(--color-text-muted)' }}>Allocation</th>
+                            <th style={{ textAlign: 'right', padding: '1rem', width: '100px', color: 'var(--color-text-muted)' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {sortedDistributions.length === 0 ? (
                             <tr>
-                                <td colSpan="3" style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+                                <td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
                                     No distributions added yet.
                                 </td>
                             </tr>
                         ) : (
-                            sortedDistributions.map(item => (
-                                <tr key={item.id} className="distribution-row" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                                    <td style={{ padding: '1rem', fontWeight: 500 }}>{item.name}</td>
-                                    <td style={{ padding: '1rem', textAlign: 'right' }}>{formatCurrency(item.amount)}</td>
-                                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                                        <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                            <button
-                                                onClick={() => handleEdit(item)}
-                                                className="btn btn-ghost"
-                                                style={{ padding: '0.25rem' }}
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(item.id)}
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    color: 'var(--color-text-muted)',
-                                                    cursor: 'pointer',
-                                                    padding: '0.25rem'
-                                                }}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
+                            sortedDistributions.map(item => {
+                                const percentage = totalDistributed > 0 ? (item.amount / totalDistributed) * 100 : 0;
+                                return (
+                                    <tr key={item.id} className="distribution-row" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                        <td style={{ padding: '1rem', fontWeight: 500 }}>
+                                            {item.name}
+                                            {item.isSalaryAccount && (
+                                                <span style={{
+                                                    marginLeft: '0.5rem',
+                                                    fontSize: '0.7rem',
+                                                    background: 'var(--color-primary)',
+                                                    color: 'white',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px',
+                                                    fontWeight: 600,
+                                                    verticalAlign: 'middle',
+                                                    display: 'inline-block'
+                                                }}>
+                                                    SALARY
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '1rem', textAlign: 'right' }}>{formatCurrency(item.amount)}</td>
+                                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-primary)' }}>
+                                            {percentage.toFixed(1)}%
+                                        </td>
+                                        <td style={{ padding: '1rem', textAlign: 'right' }}>
+                                            <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => handleEdit(item)}
+                                                    className="btn btn-ghost"
+                                                    style={{ padding: '0.25rem' }}
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(item.id)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: 'var(--color-text-muted)',
+                                                        cursor: 'pointer',
+                                                        padding: '0.25rem'
+                                                    }}
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                         {/* Total Row */}
                         {distributions.length > 0 && (
                             <tr style={{ background: 'var(--color-bg-subtle)', fontWeight: 700 }}>
                                 <td style={{ padding: '1rem' }}>Total</td>
                                 <td style={{ padding: '1rem', textAlign: 'right' }}>{formatCurrency(totalDistributed)}</td>
+                                <td style={{ padding: '1rem', textAlign: 'right' }}>100.0%</td>
                                 <td></td>
                             </tr>
                         )}

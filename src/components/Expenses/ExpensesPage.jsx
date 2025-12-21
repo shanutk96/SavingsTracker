@@ -130,40 +130,51 @@ const ExpensesPage = () => {
 
 
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const handleAddSubmit = async (e) => {
         e.preventDefault();
         const finalCategory = isCustomCategory ? customCategory : newExpense.category;
         if (!newExpense.amount || !finalCategory) return;
 
-        // Auto-persist custom categories to the list
-        if (isCustomCategory) {
-            // we don't await this blocking the UI, but we trigger it
-            addCategory(finalCategory).catch(err => console.error("Failed to auto-add category", err));
+        setIsSubmitting(true);
+
+        try {
+            // Auto-persist custom categories to the list
+            if (isCustomCategory) {
+                // we don't await this blocking the UI, but we trigger it
+                addCategory(finalCategory).catch(err => console.error("Failed to auto-add category", err));
+            }
+
+            // Month logic from date
+            const d = new Date(newExpense.date);
+            const mStr = `${months[d.getMonth()]} ${d.getFullYear()}`;
+
+            const expenseData = {
+                ...newExpense,
+                category: finalCategory,
+                amount: evaluateMathExpression(newExpense.amount),
+                expression: newExpense.amount,
+                month: mStr
+            };
+
+            if (editingId) {
+                await updateDailyExpense(editingId, expenseData);
+            } else {
+                await addDailyExpense(expenseData);
+            }
+
+            setIsAddModalOpen(false);
+            setNewExpense({ ...newExpense, amount: '', description: '' });
+            setEditingId(null);
+            setCustomCategory('');
+            setIsCustomCategory(false);
+        } catch (error) {
+            console.error("Failed to save transaction:", error);
+            alert("Failed to save transaction. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
-
-        // Month logic from date
-        const d = new Date(newExpense.date);
-        const mStr = `${months[d.getMonth()]} ${d.getFullYear()}`;
-
-        const expenseData = {
-            ...newExpense,
-            category: finalCategory,
-            amount: evaluateMathExpression(newExpense.amount),
-            expression: newExpense.amount,
-            month: mStr
-        };
-
-        if (editingId) {
-            await updateDailyExpense(editingId, expenseData);
-        } else {
-            await addDailyExpense(expenseData);
-        }
-
-        setIsAddModalOpen(false);
-        setNewExpense({ ...newExpense, amount: '', description: '' });
-        setEditingId(null);
-        setCustomCategory('');
-        setIsCustomCategory(false);
     };
 
     const handleEdit = (item) => {
@@ -705,8 +716,8 @@ const ExpensesPage = () => {
                         />
                     </div>
 
-                    <Button type="submit" variant="primary" style={{ marginTop: '1rem' }}>
-                        {editingId ? "Update Transaction" : "Save Transaction"}
+                    <Button type="submit" variant="primary" style={{ marginTop: '1rem' }} disabled={isSubmitting}>
+                        {isSubmitting ? "Saving..." : (editingId ? "Update Transaction" : "Save Transaction")}
                     </Button>
                 </form>
             </Modal>

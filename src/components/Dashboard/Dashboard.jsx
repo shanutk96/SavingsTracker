@@ -9,7 +9,7 @@ import Button from '../UI/Button';
 import { Plus, Wallet, PiggyBank, Receipt, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
-    const { entries, addEntry, updateEntry, deleteEntry, initialBalance, updateInitialBalance } = useData();
+    const { entries, addEntry, updateEntry, deleteEntry, initialBalance, updateInitialBalance, distributions, updateDistribution } = useData();
     const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
     const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -68,12 +68,30 @@ const Dashboard = () => {
         maximumFractionDigits: 0
     }).format(val);
 
-    const handleSaveEntry = (entryData) => {
+    const handleSaveEntry = async (entryData) => {
+        // Calculate Savings Delta
+        let deltaSavings = 0;
+        const newSavings = Number(entryData.savings) || 0;
+
         if (editingEntry) {
-            updateEntry(editingEntry.id, entryData);
+            const oldSavings = Number(editingEntry.savings) || 0;
+            deltaSavings = newSavings - oldSavings;
+            await updateEntry(editingEntry.id, entryData);
         } else {
-            addEntry(entryData);
+            deltaSavings = newSavings;
+            await addEntry(entryData);
         }
+
+        // Sync with Salary Account
+        const salaryAccount = distributions.find(d => d.isSalaryAccount);
+        if (salaryAccount && deltaSavings !== 0) {
+            const currentAmount = Number(salaryAccount.amount) || 0;
+            await updateDistribution(salaryAccount.id, {
+                ...salaryAccount,
+                amount: currentAmount + deltaSavings
+            });
+        }
+
         setIsEntryModalOpen(false);
     };
 
