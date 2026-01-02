@@ -3,7 +3,7 @@ import { useData } from '../../context/DataContext';
 import Button from '../UI/Button';
 import ConfirmModal from '../UI/ConfirmModal';
 import Modal from '../UI/Modal';
-import { Plus, Trash2, CheckSquare, Square, Calculator, Edit2, Check, X, CheckCircle, ArrowRight, Settings } from 'lucide-react';
+import { Plus, Trash2, CheckSquare, Square, Calculator, Edit2, Check, X, CheckCircle, ArrowRight, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CreditCardPage = () => {
     const {
@@ -29,6 +29,27 @@ const CreditCardPage = () => {
     const currentDate = new Date();
     const [selectedMonthName, setSelectedMonthName] = useState(months[currentDate.getMonth()]);
     const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+
+    const handlePrevMonth = () => {
+        const currentIndex = months.indexOf(selectedMonthName);
+        if (currentIndex === 0) {
+            setSelectedMonthName(months[11]);
+            setSelectedYear(prev => prev - 1);
+        } else {
+            setSelectedMonthName(months[currentIndex - 1]);
+        }
+    };
+
+    const handleNextMonth = () => {
+        const currentIndex = months.indexOf(selectedMonthName);
+        if (currentIndex === 11) {
+            setSelectedMonthName(months[0]);
+            setSelectedYear(prev => prev + 1);
+        } else {
+            setSelectedMonthName(months[currentIndex + 1]);
+        }
+    };
+
 
     // Derived full string for filtering
     const selectedMonth = `${selectedMonthName} ${selectedYear}`;
@@ -189,7 +210,10 @@ const CreditCardPage = () => {
 
                     <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', flexDirection: 'row', alignItems: 'center' }}>
                         {/* Month/Year Selects */}
-                        <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center' }}>
+                            <Button variant="ghost" onClick={handlePrevMonth} style={{ padding: '0.5rem' }}>
+                                <ChevronLeft size={20} />
+                            </Button>
                             <select
                                 value={selectedMonthName}
                                 onChange={(e) => setSelectedMonthName(e.target.value)}
@@ -236,6 +260,9 @@ const CreditCardPage = () => {
                                     <option key={y} value={y}>{y}</option>
                                 ))}
                             </select>
+                            <Button variant="ghost" onClick={handleNextMonth} style={{ padding: '0.5rem' }}>
+                                <ChevronRight size={20} />
+                            </Button>
                         </div>
                         {/* Manage Categories Button - Moved inside header-controls for better stacking on mobile */}
                         <button
@@ -417,7 +444,12 @@ const CreditCardPage = () => {
 
 const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDeleteGroup, onMarkPaid, evaluateMath }) => {
     // Sort items by Oldest First (Newest at Bottom)
-    const sortedItems = [...items].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const sortedItems = [...items].sort((a, b) => {
+        if (a.isChecked !== b.isChecked) {
+            return a.isChecked ? 1 : -1;
+        }
+        return new Date(a.createdAt) - new Date(b.createdAt);
+    });
 
     const [newItemDesc, setNewItemDesc] = useState('');
     const [newItemAmount, setNewItemAmount] = useState('');

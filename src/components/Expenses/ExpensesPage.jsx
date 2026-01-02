@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Edit, Settings, Check, Edit2 } from 'lucide-react';
+import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Edit, Settings, Check, Edit2, ChevronLeft } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import Button from '../UI/Button';
 import Modal from '../UI/Modal';
@@ -21,6 +21,26 @@ const ExpensesPage = () => {
 
     // Derived full string for filtering
     const selectedMonth = `${selectedMonthName} ${selectedYear}`;
+
+    const handlePrevMonth = () => {
+        const currentIndex = months.indexOf(selectedMonthName);
+        if (currentIndex === 0) {
+            setSelectedMonthName(months[11]);
+            setSelectedYear(prev => prev - 1);
+        } else {
+            setSelectedMonthName(months[currentIndex - 1]);
+        }
+    };
+
+    const handleNextMonth = () => {
+        const currentIndex = months.indexOf(selectedMonthName);
+        if (currentIndex === 11) {
+            setSelectedMonthName(months[0]);
+            setSelectedYear(prev => prev + 1);
+        } else {
+            setSelectedMonthName(months[currentIndex + 1]);
+        }
+    };
     const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
     // Year Options (Current Year - 1 to Current Year + 5)
@@ -247,7 +267,10 @@ const ExpensesPage = () => {
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Expense</h2>
                         <p style={{ color: 'var(--color-text-muted)' }}>Record daily expenses and get a clear breakdown of your monthly spending.</p>
                     </div>
-                    <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <Button variant="ghost" onClick={handlePrevMonth} style={{ padding: '0.5rem' }}>
+                            <ChevronLeft size={20} />
+                        </Button>
                         <select
                             value={selectedMonthName}
                             onChange={(e) => setSelectedMonthName(e.target.value)}
@@ -295,6 +318,9 @@ const ExpensesPage = () => {
                                 <option key={y} value={y}>{y}</option>
                             ))}
                         </select>
+                        <Button variant="ghost" onClick={handleNextMonth} style={{ padding: '0.5rem' }}>
+                            <ChevronRight size={20} />
+                        </Button>
                     </div>
 
 
