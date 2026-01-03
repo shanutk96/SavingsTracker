@@ -285,15 +285,16 @@ tr:hover td {
 
 /* Responsive Utilities */
 @media (max-width: 768px) {
+
   /* Stack flex containers vertically on mobile */
   .flex-responsive {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 1rem !important;
   }
-  
+
   /* Ensure children take full width */
-  .flex-responsive > * {
+  .flex-responsive>* {
     width: 100%;
   }
 
@@ -304,11 +305,12 @@ tr:hover td {
     gap: 1rem !important;
     width: 100%;
   }
-  
-  .header-controls > div,
-  .header-controls > button {
+
+  .header-controls>div,
+  .header-controls>button {
     width: 100%;
-    justify-content: center; /* Center the button content */
+    justify-content: center;
+    /* Center the button content */
   }
 
   /* Adjust the filter dropdown container specifically */
@@ -316,8 +318,29 @@ tr:hover td {
     justify-content: space-between;
     width: 100%;
   }
-  
+
   .filter-container select {
     flex-grow: 1;
+  }
+
+  /* Force visibility of action buttons on touch devices */
+  .distribution-row .action-buttons,
+  .savings-row .action-buttons,
+  .card-group-header .header-edit-btn {
+    opacity: 1 !important;
+  }
+
+  /* Increase touch targets for inputs and selects */
+  .input-field,
+  .select-minimal,
+  .btn {
+    min-height: 44px;
+    font-size: 16px;
+    /* Prevent IOS zoom */
+  }
+
+  /* Adjust container padding */
+  .container {
+    padding: 0;
   }
 }
