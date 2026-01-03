@@ -301,16 +301,32 @@ tr:hover td {
   /* Specific fix for the top header actions (Filter + Set Initial) */
   .header-controls {
     flex-direction: column;
-    align-items: stretch !important;
+    align-items: center !important;
     gap: 1rem !important;
     width: 100%;
   }
 
-  .header-controls>div,
+  /* Only target direct buttons, NOT divs (like date selector group) */
   .header-controls>button {
-    width: 100%;
+    width: auto;
     justify-content: center;
-    /* Center the button content */
+  }
+
+  /* New rule for the date selector group */
+  .date-selector-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .date-selector-group .select-minimal {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    padding-left: 0.5rem;
+    padding-right: 1.5rem;
   }
 
   /* Adjust the filter dropdown container specifically */

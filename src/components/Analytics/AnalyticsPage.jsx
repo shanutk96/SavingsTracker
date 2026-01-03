@@ -10,7 +10,8 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
+import Button from '../UI/Button';
 
 const AnalyticsPage = () => {
     const { entries } = useData();
@@ -27,6 +28,37 @@ const AnalyticsPage = () => {
 
     const toggleLine = (key) => {
         setVisibleLines(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const handlePrevYear = () => {
+        if (availableYears.length === 0) return;
+        if (selectedYear === 'All') {
+            setSelectedYear(availableYears[0]); // Default to newest
+            return;
+        }
+        const currentIndex = availableYears.indexOf(selectedYear);
+        if (currentIndex < availableYears.length - 1) {
+            setSelectedYear(availableYears[currentIndex + 1]); // Go to older year (next index in desc sorted list)
+        } else {
+            // Optional: Wrap around or stop? Let's stop. 
+            // Or maybe go to 'All' after oldest? Let's keep it simple.
+        }
+    };
+
+    const handleNextYear = () => {
+        if (availableYears.length === 0) return;
+        if (selectedYear === 'All') {
+            setSelectedYear(availableYears[0]);
+            return;
+        }
+        const currentIndex = availableYears.indexOf(selectedYear);
+        if (currentIndex > 0) {
+            setSelectedYear(availableYears[currentIndex - 1]); // Go to newer year (prev index)
+        } else if (currentIndex === 0) {
+            // Already at newest
+            // Maybe switch to 'All'? 
+            setSelectedYear('All');
+        }
     };
 
     // Extract unique years from entries
@@ -93,91 +125,99 @@ const AnalyticsPage = () => {
                     <p style={{ color: 'var(--color-text-muted)' }}>Visualize your income, expenses, and savings over time.</p>
                 </div>
 
-                {/* Year Filter Dropdown */}
-                <div style={{ position: 'relative', minWidth: '120px' }}>
-                    <div
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        className="input-field"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            cursor: 'pointer',
-                            background: 'var(--color-bg-card)',
-                            color: 'var(--color-text-main)',
-                            fontWeight: 500,
-                            padding: '0.5rem 1rem',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: '8px'
-                        }}
-                    >
-                        <span>{selectedYear === 'All' ? 'All Years' : selectedYear}</span>
-                        <ChevronRight size={16} style={{ transform: isYearDropdownOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                    </div>
-                    {isYearDropdownOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            right: 0,
-                            left: 0,
-                            background: 'var(--color-bg-surface)',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: '8px',
-                            marginTop: '4px',
-                            zIndex: 1000,
-                            boxShadow: 'var(--shadow-md)',
-                            maxHeight: '200px',
-                            overflowY: 'auto'
-                        }}>
-                            <div
-                                onClick={() => {
-                                    setSelectedYear('All');
-                                    setIsYearDropdownOpen(false);
-                                }}
-                                style={{
-                                    padding: '0.75rem 1rem',
-                                    cursor: 'pointer',
-                                    transition: 'background 0.2s',
-                                    background: selectedYear === 'All' ? 'var(--color-bg-subtle)' : 'transparent',
-                                    color: selectedYear === 'All' ? 'var(--color-primary)' : 'var(--color-text-main)',
-                                    fontWeight: selectedYear === 'All' ? 600 : 400
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (selectedYear !== 'All') e.currentTarget.style.background = 'var(--color-bg-subtle)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (selectedYear !== 'All') e.currentTarget.style.background = 'transparent';
-                                }}
-                            >
-                                All Years
-                            </div>
-                            {availableYears.map(year => (
+                {/* Year Filter Dropdown with Arrows */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Button variant="ghost" onClick={handlePrevYear} disabled={selectedYear !== 'All' && selectedYear === availableYears[availableYears.length - 1]} style={{ padding: '0.5rem' }}>
+                        <ChevronLeft size={20} />
+                    </Button>
+                    <div style={{ position: 'relative', minWidth: '120px' }}>
+                        <div
+                            onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                            className="input-field"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                cursor: 'pointer',
+                                background: 'var(--color-bg-card)',
+                                color: 'var(--color-text-main)',
+                                fontWeight: 500,
+                                padding: '0.5rem 1rem',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '8px'
+                            }}
+                        >
+                            <span>{selectedYear === 'All' ? 'All Years' : selectedYear}</span>
+                            <ChevronRight size={16} style={{ transform: isYearDropdownOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                        </div>
+                        {isYearDropdownOpen && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                left: 0,
+                                background: 'var(--color-bg-surface)',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '8px',
+                                marginTop: '4px',
+                                zIndex: 1000,
+                                boxShadow: 'var(--shadow-md)',
+                                maxHeight: '200px',
+                                overflowY: 'auto'
+                            }}>
                                 <div
-                                    key={year}
                                     onClick={() => {
-                                        setSelectedYear(year);
+                                        setSelectedYear('All');
                                         setIsYearDropdownOpen(false);
                                     }}
                                     style={{
                                         padding: '0.75rem 1rem',
                                         cursor: 'pointer',
                                         transition: 'background 0.2s',
-                                        background: selectedYear === year ? 'var(--color-bg-subtle)' : 'transparent',
-                                        color: selectedYear === year ? 'var(--color-primary)' : 'var(--color-text-main)',
-                                        fontWeight: selectedYear === year ? 600 : 400
+                                        background: selectedYear === 'All' ? 'var(--color-bg-subtle)' : 'transparent',
+                                        color: selectedYear === 'All' ? 'var(--color-primary)' : 'var(--color-text-main)',
+                                        fontWeight: selectedYear === 'All' ? 600 : 400
                                     }}
                                     onMouseEnter={(e) => {
-                                        if (selectedYear !== year) e.currentTarget.style.background = 'var(--color-bg-subtle)';
+                                        if (selectedYear !== 'All') e.currentTarget.style.background = 'var(--color-bg-subtle)';
                                     }}
                                     onMouseLeave={(e) => {
-                                        if (selectedYear !== year) e.currentTarget.style.background = 'transparent';
+                                        if (selectedYear !== 'All') e.currentTarget.style.background = 'transparent';
                                     }}
                                 >
-                                    {year}
+                                    All Years
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                                {availableYears.map(year => (
+                                    <div
+                                        key={year}
+                                        onClick={() => {
+                                            setSelectedYear(year);
+                                            setIsYearDropdownOpen(false);
+                                        }}
+                                        style={{
+                                            padding: '0.75rem 1rem',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s',
+                                            background: selectedYear === year ? 'var(--color-bg-subtle)' : 'transparent',
+                                            color: selectedYear === year ? 'var(--color-primary)' : 'var(--color-text-main)',
+                                            fontWeight: selectedYear === year ? 600 : 400
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (selectedYear !== year) e.currentTarget.style.background = 'var(--color-bg-subtle)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (selectedYear !== year) e.currentTarget.style.background = 'transparent';
+                                        }}
+                                    >
+                                        {year}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <Button variant="ghost" onClick={handleNextYear} disabled={selectedYear === 'All'} style={{ padding: '0.5rem' }}>
+                        <ChevronRight size={20} />
+                    </Button>
                 </div>
             </div>
 

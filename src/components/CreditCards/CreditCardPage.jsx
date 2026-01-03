@@ -210,7 +210,7 @@ const CreditCardPage = () => {
 
                     <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', flexDirection: 'row', alignItems: 'center' }}>
                         {/* Month/Year Selects */}
-                        <div style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div className="date-selector-group" style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center' }}>
                             <Button variant="ghost" onClick={handlePrevMonth} style={{ padding: '0.5rem' }}>
                                 <ChevronLeft size={20} />
                             </Button>

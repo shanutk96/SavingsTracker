@@ -268,82 +268,82 @@ const ExpensesPage = () => {
                         <p style={{ color: 'var(--color-text-muted)' }}>Record daily expenses and get a clear breakdown of your monthly spending.</p>
                     </div>
                     <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <Button variant="ghost" onClick={handlePrevMonth} style={{ padding: '0.5rem' }}>
-                            <ChevronLeft size={20} />
-                        </Button>
-                        <select
-                            value={selectedMonthName}
-                            onChange={(e) => setSelectedMonthName(e.target.value)}
-                            className="select-minimal"
-                            style={{
-                                padding: '0.5rem 2rem 0.5rem 1rem',
-                                appearance: 'none',
-                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 0.75rem center',
-                                backgroundSize: '1em',
-                                border: '1px solid var(--color-border)',
-                                borderRadius: '8px',
-                                background: 'var(--color-bg-card)',
-                                color: 'var(--color-text-main)',
-                                fontWeight: 600,
-                                cursor: 'pointer'
-                            }}
-                        >
-                            {months.map(m => (
-                                <option key={m} value={m}>{m}</option>
-                            ))}
-                        </select>
+                        <div className="date-selector-group" style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center' }}>
+                            <Button variant="ghost" onClick={handlePrevMonth} style={{ padding: '0.5rem' }}>
+                                <ChevronLeft size={20} />
+                            </Button>
+                            <select
+                                value={selectedMonthName}
+                                onChange={(e) => setSelectedMonthName(e.target.value)}
+                                className="select-minimal"
+                                style={{
+                                    padding: '0.5rem 2rem 0.5rem 1rem',
+                                    appearance: 'none',
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundPosition: 'right 0.75rem center',
+                                    backgroundSize: '1em',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '8px',
+                                    background: 'var(--color-bg-card)',
+                                    color: 'var(--color-text-main)',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {months.map(m => (
+                                    <option key={m} value={m}>{m}</option>
+                                ))}
+                            </select>
 
-                        <select
-                            value={selectedYear}
-                            onChange={(e) => setSelectedYear(Number(e.target.value))}
-                            className="select-minimal"
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                className="select-minimal"
+                                style={{
+                                    padding: '0.5rem 2rem 0.5rem 1rem',
+                                    appearance: 'none',
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundPosition: 'right 0.75rem center',
+                                    backgroundSize: '1em',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '8px',
+                                    background: 'var(--color-bg-card)',
+                                    color: 'var(--color-text-main)',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {yearOptions.map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                            <Button variant="ghost" onClick={handleNextMonth} style={{ padding: '0.5rem' }}>
+                                <ChevronRight size={20} />
+                            </Button>
+                        </div>
+                        {/* Manage Categories Button */}
+                        <button
+                            onClick={() => setIsManagerOpen(true)}
                             style={{
-                                padding: '0.5rem 2rem 0.5rem 1rem',
-                                appearance: 'none',
-                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 0.75rem center',
-                                backgroundSize: '1em',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                background: 'transparent',
                                 border: '1px solid var(--color-border)',
+                                padding: '0.4rem 0.8rem',
                                 borderRadius: '8px',
-                                background: 'var(--color-bg-card)',
-                                color: 'var(--color-text-main)',
-                                fontWeight: 600,
-                                cursor: 'pointer'
+                                color: 'var(--color-text-muted)',
+                                fontSize: '0.8rem',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                marginLeft: '1rem' // This might need adjustment on mobile but we'll fix in CSS
                             }}
                         >
-                            {yearOptions.map(y => (
-                                <option key={y} value={y}>{y}</option>
-                            ))}
-                        </select>
-                        <Button variant="ghost" onClick={handleNextMonth} style={{ padding: '0.5rem' }}>
-                            <ChevronRight size={20} />
-                        </Button>
+                            <Settings size={14} /> Manage
+                        </button>
                     </div>
-
-
-                    {/* Manage Categories Button */}
-                    <button
-                        onClick={() => setIsManagerOpen(true)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            background: 'transparent',
-                            border: '1px solid var(--color-border)',
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '8px',
-                            color: 'var(--color-text-muted)',
-                            fontSize: '0.8rem',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            marginLeft: '1rem'
-                        }}
-                    >
-                        <Settings size={14} /> Manage
-                    </button>
                 </div>
             </div>
 
