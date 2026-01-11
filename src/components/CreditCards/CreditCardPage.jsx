@@ -128,6 +128,41 @@ const CreditCardPage = () => {
         setVisibleCards(dataCards);
     }, [expensesByCard]);
 
+    // Sort Visible Cards: Unpaid first, Paid (all checked) last
+    // Within groups, sort by Last Activity (Newest First)
+    const sortedVisibleCards = useMemo(() => {
+        return [...visibleCards].sort((a, b) => {
+            const itemsA = expensesByCard[a] || [];
+            const itemsB = expensesByCard[b] || [];
+
+            // Helper to get last activity timestamp
+            const getLastActivity = (items) => {
+                if (!items || items.length === 0) return 0;
+                // Use updatedAt if available, falling back to createdAt
+                return Math.max(...items.map(i => new Date(i.updatedAt || i.createdAt || 0).getTime()));
+            };
+
+            const lastActivityA = getLastActivity(itemsA);
+            const lastActivityB = getLastActivity(itemsB);
+
+            // A card is "Paid" if it has items and ALL are checked
+            const isPaidA = itemsA.length > 0 && itemsA.every(item => item.isChecked);
+            const isPaidB = itemsB.length > 0 && itemsB.every(item => item.isChecked);
+
+            if (isPaidA !== isPaidB) {
+                return isPaidA ? 1 : -1; // Paid goes to bottom
+            }
+
+            // If Paid status is same, sort by Last Activity Descending (Newest First)
+            if (lastActivityA !== lastActivityB) {
+                return lastActivityB - lastActivityA;
+            }
+
+            // Fallback to alphabetical for stability
+            return a.localeCompare(b);
+        });
+    }, [visibleCards, expensesByCard]);
+
     const handleAddCard = () => {
         if (newCardName.trim()) {
             // Allow adding a card manually (it will stay until next data update/month switch)
@@ -174,8 +209,6 @@ const CreditCardPage = () => {
         }
     };
 
-
-
     const promptDeleteCardFromList = (cardName) => {
         setDeleteListConfig({ isOpen: true, cardName });
     };
@@ -186,6 +219,20 @@ const CreditCardPage = () => {
         }
         setDeleteListConfig({ isOpen: false, cardName: null });
     };
+
+
+
+    // Split into Active and Paid for separate sections
+    const activeCards = sortedVisibleCards.filter(cardName => {
+        const items = expensesByCard[cardName] || [];
+        // Active if NO items (new card) OR NOT all items are checked
+        return items.length === 0 || !items.every(item => item.isChecked);
+    });
+
+    const paidCards = sortedVisibleCards.filter(cardName => {
+        const items = expensesByCard[cardName] || [];
+        return items.length > 0 && items.every(item => item.isChecked);
+    });
 
     return (
         <div className="container" style={{ paddingBottom: '4rem' }}>
@@ -208,7 +255,7 @@ const CreditCardPage = () => {
                         <p style={{ color: 'var(--color-text-muted)' }}>Track your credit card spending and payments.</p>
                     </div>
 
-                    <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', flexDirection: 'row', alignItems: 'center' }}>
+                    <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         {/* Month/Year Selects */}
                         <div className="date-selector-group" style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center' }}>
                             <Button variant="ghost" onClick={handlePrevMonth} style={{ padding: '0.5rem' }}>
@@ -374,32 +421,44 @@ const CreditCardPage = () => {
                     confirmText="Delete"
                     isDanger
                 />
-                {/* Card Grid */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                    gap: '1.5rem',
-                    alignItems: 'start'
-                }}>
-                    {visibleCards.map(cardName => (
-                        <CardGroup
-                            key={cardName}
-                            cardName={cardName}
-                            items={expensesByCard[cardName] || []}
-                            month={selectedMonth}
-                            onAdd={(item) => addCCExpense({ ...item, cardName, month: selectedMonth })}
-                            onUpdate={updateCCExpense}
-                            onDelete={deleteCCExpense}
 
-                            onRename={(newName) => renameCardGroup(cardName, newName, selectedMonth)}
-                            onDeleteGroup={() => promptDeleteCard(cardName)}
-                            onMarkPaid={(isPaid) => markCardGroupPaid(cardName, selectedMonth, isPaid)}
-                            evaluateMath={evaluateMathExpression}
-                        />
+                {/* Active Cards Section */}
+                <div style={{
+                    columnWidth: '320px',
+                    columnGap: '1.5rem',
+                    width: '100%',
+                    marginBottom: paidCards.length > 0 ? '3rem' : '0'
+                }}>
+                    {activeCards.map(cardName => (
+                        <div key={cardName} style={{ breakInside: 'avoid', marginBottom: '1.5rem' }}>
+                            <CardGroup
+                                cardName={cardName}
+                                items={expensesByCard[cardName] || []}
+                                month={selectedMonth}
+                                onAdd={(item) => addCCExpense({ ...item, cardName, month: selectedMonth })}
+                                onUpdate={updateCCExpense}
+                                onDelete={deleteCCExpense}
+
+                                onRename={(newName) => renameCardGroup(cardName, newName, selectedMonth)}
+                                onDeleteGroup={() => promptDeleteCard(cardName)}
+                                onMarkPaid={(isPaid) => markCardGroupPaid(cardName, selectedMonth, isPaid)}
+                                evaluateMath={evaluateMathExpression}
+                            />
+                        </div>
                     ))}
 
                     {/* Add New Card Group */}
-                    <div className="card" style={{ padding: '1.5rem', borderStyle: 'dashed', borderColor: 'var(--color-border)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="card" style={{
+                        padding: '1.5rem',
+                        borderStyle: 'dashed',
+                        borderColor: 'var(--color-border)',
+                        background: 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        breakInside: 'avoid',
+                        marginBottom: '1.5rem'
+                    }}>
                         {isAddingCard ? (
                             <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
                                 <input
@@ -437,6 +496,44 @@ const CreditCardPage = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Paid Cards Section */}
+                {paidCards.length > 0 && (
+                    <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
+                            <div style={{ height: '1px', flex: 1, background: 'var(--color-border)' }}></div>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <CheckCircle size={18} /> Paid Cards
+                            </h3>
+                            <div style={{ height: '1px', flex: 1, background: 'var(--color-border)' }}></div>
+                        </div>
+
+                        <div style={{
+                            columnWidth: '320px',
+                            columnGap: '1.5rem',
+                            width: '100%',
+                            opacity: 0.8
+                        }}>
+                            {paidCards.map(cardName => (
+                                <div key={cardName} style={{ breakInside: 'avoid', marginBottom: '1.5rem' }}>
+                                    <CardGroup
+                                        cardName={cardName}
+                                        items={expensesByCard[cardName] || []}
+                                        month={selectedMonth}
+                                        onAdd={(item) => addCCExpense({ ...item, cardName, month: selectedMonth })}
+                                        onUpdate={updateCCExpense}
+                                        onDelete={deleteCCExpense}
+
+                                        onRename={(newName) => renameCardGroup(cardName, newName, selectedMonth)}
+                                        onDeleteGroup={() => promptDeleteCard(cardName)}
+                                        onMarkPaid={(isPaid) => markCardGroupPaid(cardName, selectedMonth, isPaid)}
+                                        evaluateMath={evaluateMathExpression}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -315,7 +315,10 @@ export const DataProvider = ({ children }) => {
     const updateCCExpense = async (id, updatedItem) => {
         if (!user) return;
         const ccRef = doc(db, 'users', user.uid, 'cc_expenses', id);
-        await updateDoc(ccRef, updatedItem);
+        await updateDoc(ccRef, {
+            ...updatedItem,
+            updatedAt: new Date().toISOString()
+        });
     };
 
     const deleteCCExpense = async (id) => {
@@ -338,8 +341,9 @@ export const DataProvider = ({ children }) => {
         // Wait, I missed importing getDocs.
 
         const batch = writeBatch(db);
+        const timestamp = new Date().toISOString();
         snapshot.docs.forEach(doc => {
-            batch.update(doc.ref, { cardName: newName });
+            batch.update(doc.ref, { cardName: newName, updatedAt: timestamp });
         });
 
         await batch.commit();
@@ -375,7 +379,8 @@ export const DataProvider = ({ children }) => {
         );
         const snapshot = await getDocs(q);
         const batch = writeBatch(db);
-        snapshot.docs.forEach(doc => batch.update(doc.ref, { isChecked: isPaid }));
+        const timestamp = new Date().toISOString();
+        snapshot.docs.forEach(doc => batch.update(doc.ref, { isChecked: isPaid, updatedAt: timestamp }));
         await batch.commit();
     };
 
