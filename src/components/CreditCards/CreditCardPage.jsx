@@ -27,8 +27,22 @@ const CreditCardPage = () => {
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
     const currentDate = new Date();
-    const [selectedMonthName, setSelectedMonthName] = useState(months[currentDate.getMonth()]);
-    const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+
+    // Smart Default: If date is <= 20th, show previous month. Else current month.
+    let initialMonthIndex = currentDate.getMonth();
+    let initialYear = currentDate.getFullYear();
+
+    if (currentDate.getDate() <= 20) {
+        if (initialMonthIndex === 0) {
+            initialMonthIndex = 11;
+            initialYear -= 1;
+        } else {
+            initialMonthIndex -= 1;
+        }
+    }
+
+    const [selectedMonthName, setSelectedMonthName] = useState(months[initialMonthIndex]);
+    const [selectedYear, setSelectedYear] = useState(initialYear);
 
     const handlePrevMonth = () => {
         const currentIndex = months.indexOf(selectedMonthName);
