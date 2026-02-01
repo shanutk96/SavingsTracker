@@ -291,6 +291,38 @@ export const DataProvider = ({ children }) => {
 
     const updateDistribution = async (id, updatedItem) => {
         if (!user) return;
+
+        // Auto-Balance Logic
+        const oldItem = distributions.find(d => d.id === id);
+        const salaryAccount = distributions.find(d => d.isSalaryAccount);
+
+        // Check if we need to auto-balance:
+        // 1. We have a salary account
+        // 2. We are NOT updating the salary account itself (prevent recursion/conflict)
+        // 3. The amount has changed
+        if (salaryAccount && oldItem && !oldItem.isSalaryAccount && !updatedItem.isSalaryAccount && updatedItem.amount !== undefined) {
+            const oldAmount = Number(oldItem.amount) || 0;
+            const newAmount = Number(updatedItem.amount) || 0;
+            const difference = newAmount - oldAmount;
+
+            if (difference !== 0) {
+                const batch = writeBatch(db);
+
+                // 1. Update the target item
+                const distRef = doc(db, 'users', user.uid, 'distributions', id);
+                batch.update(distRef, updatedItem);
+
+                // 2. Update the Salary Account (Inverse of the difference)
+                const salaryRef = doc(db, 'users', user.uid, 'distributions', salaryAccount.id);
+                const currentSalaryAmount = Number(salaryAccount.amount) || 0;
+                batch.update(salaryRef, { amount: currentSalaryAmount - difference });
+
+                await batch.commit();
+                return;
+            }
+        }
+
+        // Fallback to standard update if no auto-balance needed
         const distRef = doc(db, 'users', user.uid, 'distributions', id);
         await updateDoc(distRef, updatedItem);
     };
