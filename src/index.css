@@ -360,3 +360,20 @@ tr:hover td {
     padding: 0;
   }
 }
+
+/* Expense Actions Visibility - Global */
+.expense-actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.expense-card:hover .expense-actions {
+  opacity: 1;
+}
+
+/* Mobile Overrides */
+@media (max-width: 768px) {
+  .expense-actions {
+    opacity: 1 !important;
+  }
+}

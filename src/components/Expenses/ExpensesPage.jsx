@@ -91,7 +91,6 @@ const ExpensesPage = () => {
     const [customCategory, setCustomCategory] = useState('');
     const [isCustomCategory, setIsCustomCategory] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [hoveredId, setHoveredId] = useState(null);
 
     // Delete Confirmation State
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, id: null });
@@ -506,10 +505,8 @@ const ExpensesPage = () => {
                                 .map(item => (
                                     <div
                                         key={item.id}
-                                        className="card"
+                                        className="card expense-card"
                                         style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                                        onMouseEnter={() => setHoveredId(item.id)}
-                                        onMouseLeave={() => setHoveredId(null)}
                                     >
                                         <div>
                                             <div style={{ fontWeight: 600 }}>{item.description || item.category}</div>
@@ -522,11 +519,9 @@ const ExpensesPage = () => {
                                                 {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.amount)}
                                             </div>
 
-                                            <div style={{
+                                            <div className="expense-actions" style={{
                                                 display: 'flex',
-                                                gap: '8px',
-                                                opacity: hoveredId === item.id ? 1 : 0,
-                                                transition: 'opacity 0.2s'
+                                                gap: '8px'
                                             }}>
                                                 <button
                                                     onClick={() => handleEdit(item)}
