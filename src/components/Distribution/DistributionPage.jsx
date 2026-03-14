@@ -150,40 +150,40 @@ const DistributionPage = () => {
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Savings Distribution</h2>
             <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>Track where your savings are currently located.</p>
 
-            {/* Reconciliation Stats */}
+            {/* Reconciliation Stats - Reduced Size */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '1rem',
-                marginBottom: '2rem'
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '0.75rem',
+                marginBottom: '1.5rem'
             }}>
-                <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Total Savings (Goal)</span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-primary)' }}>{formatCurrency(totalActualSavings)}</span>
+                <div className="card" style={{ padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Total Savings (Goal)</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-primary)' }}>{formatCurrency(totalActualSavings)}</span>
                 </div>
-                <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Total Distributed</span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)' }}>{formatCurrency(totalDistributed)}</span>
+                <div className="card" style={{ padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Total Distributed</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text-main)' }}>{formatCurrency(totalDistributed)}</span>
                 </div>
                 <div className="card" style={{
-                    padding: '1.5rem',
+                    padding: '0.75rem 1rem',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.5rem',
+                    gap: '0.25rem',
                     border: isBalanced ? '1px solid var(--color-success)' : '1px solid var(--color-danger)'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Difference</span>
-                        {isBalanced ? <CheckCircle size={16} color="var(--color-success)" /> : <AlertCircle size={16} color="var(--color-danger)" />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Difference</span>
+                        {isBalanced ? <CheckCircle size={14} color="var(--color-success)" /> : <AlertCircle size={14} color="var(--color-danger)" />}
                     </div>
                     <span style={{
-                        fontSize: '1.5rem',
+                        fontSize: '1.1rem',
                         fontWeight: 700,
                         color: isBalanced ? 'var(--color-success)' : 'var(--color-danger)'
                     }}>
                         {formatCurrency(difference)}
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>
                         {difference > 0 ? 'Unallocated' : difference < 0 ? 'Over-allocated' : 'Balanced'}
                     </span>
                 </div>

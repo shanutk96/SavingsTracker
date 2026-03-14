@@ -625,6 +625,23 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
         setIsEditingCard(false);
     };
 
+    // Delete Item Confirmation State
+    const [isItemDeleteModalOpen, setIsItemDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+
+    const promptDeleteItem = (item) => {
+        setItemToDelete(item);
+        setIsItemDeleteModalOpen(true);
+    };
+
+    const confirmDeleteItem = () => {
+        if (itemToDelete) {
+            onDelete(itemToDelete.id);
+            setItemToDelete(null);
+            setIsItemDeleteModalOpen(false);
+        }
+    };
+
     return (
         <div className="card" style={{ transition: 'all 0.2s' }}>
             <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-bg-subtle)' }}>
@@ -804,7 +821,7 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
                                         <Edit2 size={14} />
                                     </button>
                                     <button
-                                        onClick={() => onDelete(item.id)}
+                                        onClick={() => promptDeleteItem(item)}
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)' }}
                                     >
                                         <Trash2 size={14} />
@@ -939,6 +956,18 @@ const CardGroup = ({ cardName, items, onAdd, onUpdate, onDelete, onRename, onDel
                     </button>
                 )}
             </form>
+
+            {/* Individual Item Delete Confirmation */}
+            <ConfirmModal
+                isOpen={isItemDeleteModalOpen}
+                title="Delete Entry?"
+                message={`Are you sure you want to delete "${itemToDelete?.description}"?`}
+                onConfirm={confirmDeleteItem}
+                onClose={() => {
+                    setIsItemDeleteModalOpen(false);
+                    setItemToDelete(null);
+                }}
+            />
         </div>
     );
 };
