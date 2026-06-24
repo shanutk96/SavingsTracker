@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2 } from 'lucide-react';
+import { SquarePen, Trash2 } from 'lucide-react';
 
 const SavingsTable = ({ entries, onEdit, onDelete }) => {
     const formatCurrency = (val) => {
@@ -84,11 +84,29 @@ const SavingsTable = ({ entries, onEdit, onDelete }) => {
                                         <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                             <button
                                                 onClick={() => onEdit(entry)}
-                                                className="btn btn-ghost"
-                                                style={{ padding: '0.25rem 0.5rem' }}
                                                 title="Edit"
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    color: 'var(--color-text-muted)',
+                                                    padding: '0.35rem',
+                                                    cursor: 'pointer',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    transition: 'all 0.2s ease',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-primary)';
+                                                    e.currentTarget.style.background = 'var(--color-primary-light)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-text-muted)';
+                                                    e.currentTarget.style.background = 'transparent';
+                                                }}
                                             >
-                                                <Edit2 size={16} />
+                                                <SquarePen size={15} />
                                             </button>
                                             <button
                                                 onClick={() => onDelete(entry.id)}
@@ -97,15 +115,24 @@ const SavingsTable = ({ entries, onEdit, onDelete }) => {
                                                     background: 'transparent',
                                                     border: 'none',
                                                     color: 'var(--color-text-muted)',
-                                                    padding: '0.25rem 0.5rem',
+                                                    padding: '0.35rem',
                                                     cursor: 'pointer',
-                                                    borderRadius: 'var(--radius-md)',
-                                                    transition: 'all 0.2s'
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    transition: 'all 0.2s ease',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
                                                 }}
-                                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-danger)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-danger)';
+                                                    e.currentTarget.style.background = 'var(--color-danger-bg)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-text-muted)';
+                                                    e.currentTarget.style.background = 'transparent';
+                                                }}
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={15} />
                                             </button>
                                         </div>
                                     </td>

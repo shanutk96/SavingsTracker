@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Edit, Settings, Check, Edit2, ChevronLeft } from 'lucide-react';
+import { Plus, ChevronRight, X, Calendar, Tag, FileText, Trash2, ArrowLeft, Settings, Check, SquarePen, ChevronLeft } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import Button from '../UI/Button';
 import Modal from '../UI/Modal';
@@ -526,42 +526,54 @@ const ExpensesPage = () => {
                                                 <button
                                                     onClick={() => handleEdit(item)}
                                                     style={{
-                                                        background: 'none',
+                                                        background: 'transparent',
                                                         border: 'none',
                                                         color: 'var(--color-text-muted)',
                                                         cursor: 'pointer',
-                                                        display: 'flex',
+                                                        display: 'inline-flex',
                                                         alignItems: 'center',
-                                                        gap: '4px',
-                                                        fontSize: '0.8rem',
-                                                        padding: '4px',
-                                                        opacity: 0.7
+                                                        justifyContent: 'center',
+                                                        padding: '6px',
+                                                        borderRadius: 'var(--radius-sm)',
+                                                        transition: 'all 0.15s ease'
                                                     }}
-                                                    onMouseEnter={(e) => e.target.style.opacity = 1}
-                                                    onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.color = 'var(--color-primary)';
+                                                        e.currentTarget.style.background = 'var(--color-primary-light)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.color = 'var(--color-text-muted)';
+                                                        e.currentTarget.style.background = 'transparent';
+                                                    }}
                                                     title="Edit"
                                                 >
-                                                    <Edit size={14} />
+                                                    <SquarePen size={13} />
                                                 </button>
                                                 <button
                                                     onClick={() => setConfirmConfig({ isOpen: true, id: item.id })}
                                                     style={{
-                                                        background: 'none',
+                                                        background: 'transparent',
                                                         border: 'none',
                                                         color: 'var(--color-text-muted)',
                                                         cursor: 'pointer',
-                                                        display: 'flex',
+                                                        display: 'inline-flex',
                                                         alignItems: 'center',
-                                                        gap: '4px',
-                                                        fontSize: '0.8rem',
-                                                        padding: '4px',
-                                                        opacity: 0.7
+                                                        justifyContent: 'center',
+                                                        padding: '6px',
+                                                        borderRadius: 'var(--radius-sm)',
+                                                        transition: 'all 0.15s ease'
                                                     }}
-                                                    onMouseEnter={(e) => e.target.style.opacity = 1}
-                                                    onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.color = 'var(--color-danger)';
+                                                        e.currentTarget.style.background = 'var(--color-danger-bg)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.color = 'var(--color-text-muted)';
+                                                        e.currentTarget.style.background = 'transparent';
+                                                    }}
                                                     title="Delete"
                                                 >
-                                                    <Trash2 size={14} />
+                                                    <Trash2 size={13} />
                                                 </button>
                                             </div>
                                         </div>
@@ -807,17 +819,55 @@ const ExpensesPage = () => {
                                                     setEditingCategory(cat);
                                                     setNewCategoryName(cat);
                                                 }}
-                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    color: 'var(--color-text-muted)',
+                                                    padding: '6px',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    transition: 'all 0.15s ease',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-primary)';
+                                                    e.currentTarget.style.background = 'var(--color-primary-light)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-text-muted)';
+                                                    e.currentTarget.style.background = 'transparent';
+                                                }}
                                                 title="Rename"
                                             >
-                                                <Edit2 size={16} />
+                                                <SquarePen size={14} />
                                             </button>
                                             <button
                                                 onClick={() => confirmCategoryDelete(cat)}
-                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-danger)' }}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    color: 'var(--color-text-muted)',
+                                                    padding: '6px',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    transition: 'all 0.15s ease',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-danger)';
+                                                    e.currentTarget.style.background = 'var(--color-danger-bg)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.color = 'var(--color-text-muted)';
+                                                    e.currentTarget.style.background = 'transparent';
+                                                }}
                                                 title="Delete"
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
                                     </>

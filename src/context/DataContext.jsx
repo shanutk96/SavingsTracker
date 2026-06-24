@@ -32,6 +32,7 @@ export const DataProvider = ({ children }) => {
     const [cardsList, setCardsList] = useState([]); // List of saved card names
     const [deletedCards, setDeletedCards] = useState([]); // Track explicitly deleted cards
     const [deletedCategories, setDeletedCategories] = useState([]); // Track explicitly deleted categories
+    const [cardBillDates, setCardBillDates] = useState({}); // Map of cardName -> billDay (1-31)
 
     // Real-time Data Sync
     useEffect(() => {
@@ -55,6 +56,7 @@ export const DataProvider = ({ children }) => {
                 setCardsList(data.cards || []);
                 setDeletedCards(data.deletedCards || []);
                 setDeletedCategories(data.deletedCategories || []);
+                setCardBillDates(data.cardBillDates || {});
             } else {
                 // Initialize empty doc for new users
                 setDoc(userDocRef, {
@@ -63,7 +65,8 @@ export const DataProvider = ({ children }) => {
 
                     cards: [],
                     deletedCards: [],
-                    deletedCategories: []
+                    deletedCategories: [],
+                    cardBillDates: {}
                 }, { merge: true });
             }
         });
@@ -369,8 +372,7 @@ export const DataProvider = ({ children }) => {
             where('month', '==', month)
         );
 
-        const snapshot = await getDocs(q); // Need getDocs import? No, I need it.
-        // Wait, I missed importing getDocs.
+        const snapshot = await getDocs(q);
 
         const batch = writeBatch(db);
         const timestamp = new Date().toISOString();
@@ -383,9 +385,17 @@ export const DataProvider = ({ children }) => {
         // Also update the Global Card List if the old name was in it
         if (cardsList.includes(oldName)) {
             const updatedList = cardsList.map(c => c === oldName ? newName : c);
-            const userDocRef = doc(db, 'users', user.uid); // Ensure this is defined
-            await updateDoc(userDocRef, { cards: updatedList });
-            // setCardsList is handled by snapshot
+            const userDocRef = doc(db, 'users', user.uid);
+            
+            const updates = { cards: updatedList };
+            if (cardBillDates && cardBillDates[oldName] !== undefined) {
+                const updatedBillDates = { ...cardBillDates };
+                updatedBillDates[newName] = updatedBillDates[oldName];
+                delete updatedBillDates[oldName];
+                updates.cardBillDates = updatedBillDates;
+            }
+            
+            await updateDoc(userDocRef, updates);
         }
     };
 
@@ -427,9 +437,12 @@ export const DataProvider = ({ children }) => {
     const deleteCard = async (cardName) => {
         if (!user) return;
         const userDocRef = doc(db, 'users', user.uid);
+        const updatedBillDates = { ...cardBillDates };
+        delete updatedBillDates[cardName];
         await updateDoc(userDocRef, {
             cards: arrayRemove(cardName),
-            deletedCards: arrayUnion(cardName)
+            deletedCards: arrayUnion(cardName),
+            cardBillDates: updatedBillDates
         });
     };
 
@@ -450,15 +463,38 @@ export const DataProvider = ({ children }) => {
         });
 
         // 2. Update the list if necessary
+        const userDocRef = doc(db, 'users', user.uid);
         if (cardsList.includes(oldName)) {
             const updatedList = cardsList.map(c => c === oldName ? newName : c);
-            const userDocRef = doc(db, 'users', user.uid);
             // Ensure unique and sorted?
             const unique = [...new Set(updatedList)].sort();
             batch.update(userDocRef, { cards: unique });
         }
 
+        // 3. Update bill date map if oldName exists in cardBillDates
+        if (cardBillDates && cardBillDates[oldName] !== undefined) {
+            const updatedBillDates = { ...cardBillDates };
+            updatedBillDates[newName] = updatedBillDates[oldName];
+            delete updatedBillDates[oldName];
+            batch.update(userDocRef, { cardBillDates: updatedBillDates });
+        }
+
         await batch.commit();
+    };
+
+    const updateCardBillDate = async (cardName, day) => {
+        if (!user) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        const dayNum = day ? parseInt(day, 10) : '';
+        const updatedBillDates = { ...cardBillDates };
+        if (dayNum) {
+            updatedBillDates[cardName] = dayNum;
+        } else {
+            delete updatedBillDates[cardName];
+        }
+        await updateDoc(userDocRef, {
+            cardBillDates: updatedBillDates
+        });
     };
 
     // Daily Expenses Handlers
@@ -582,6 +618,8 @@ export const DataProvider = ({ children }) => {
             addCard,
             deleteCard,
             renameCard,
+            cardBillDates,
+            updateCardBillDate,
             deletedCategories
         }}>
             {children}

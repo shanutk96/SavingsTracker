@@ -1,29 +1,23 @@
 import React from 'react';
 
-const StatCard = ({ title, value, icon: Icon, trend, action }) => {
+const StatCard = ({ title, value, action }) => {
     return (
-        <div className="card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', margin: 0 }}>
-                            {title}
-                        </p>
-                        {action}
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700 }}>
-                        {value}
-                    </h3>
-                </div>
-                <div style={{
-                    padding: '0.75rem',
-                    background: 'var(--color-bg-subtle)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--color-primary)'
-                }}>
-                    {Icon && <Icon size={24} />}
-                </div>
+        <div className="card" style={{ 
+            padding: '1rem 1.5rem', 
+            height: '80px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between' 
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', margin: 0, fontWeight: 500 }}>
+                    {title}
+                </p>
+                {action}
             </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
+                {value}
+            </h3>
         </div>
     );
 };

@@ -58,7 +58,6 @@ const Dashboard = () => {
     const avgSavings = countForAvg > 0 ? totalSavingsForAvg / countForAvg : 0;
     const avgSalary = countForAvg > 0 ? totalSalaryForAvg / countForAvg : 0;
     const avgSavingsPercent = avgSalary > 0 ? Math.round((avgSavings / avgSalary) * 100) : 0;
-
     const totalExpensesForAvg = entriesForAvg.reduce((acc, curr) => acc + (Number(curr.expense) || 0), 0);
     const avgExpense = countForAvg > 0 ? totalExpensesForAvg / countForAvg : 0;
 
@@ -67,6 +66,23 @@ const Dashboard = () => {
         currency: 'INR',
         maximumFractionDigits: 0
     }).format(val);
+
+
+
+    const formatCompactCurrency = (val) => {
+        const num = Number(val) || 0;
+        if (num >= 100000) {
+            return '₹' + (num / 100000).toFixed(2).replace(/\.00$/, '') + 'L';
+        }
+        if (num >= 1000) {
+            return '₹' + (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+        }
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(num);
+    };
 
     const handleSaveEntry = async (entryData) => {
         // Calculate Savings Delta
@@ -125,7 +141,7 @@ const Dashboard = () => {
         <div className="container" style={{ paddingBottom: '4rem' }}>
             <div className="flex-responsive" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div style={{ marginBottom: '1rem' }}> {/* Margin bottom for mobile stack */}
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)' }}>Overview</h2>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Overview</h2>
                     <p style={{ color: 'var(--color-text-muted)' }}>Track your financial progress</p>
                 </div>
                 <div className="header-controls" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -162,8 +178,8 @@ const Dashboard = () => {
                         </select>
                     </div>
 
-                    <Button variant="ghost" onClick={() => setIsBalanceModalOpen(true)}>
-                        <Wallet size={18} style={{ marginRight: '0.5rem' }} />
+                    <Button variant="ghost" onClick={() => setIsBalanceModalOpen(true)} style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
+                        <Wallet size={16} style={{ marginRight: '0.5rem' }} />
                         Set Initial Savings
                     </Button>
                 </div>
@@ -172,35 +188,27 @@ const Dashboard = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
                 <StatCard
                     title="Total Savings"
-                    value={formatCurrency(currentTotalSavings)}
-                    icon={PiggyBank}
-                    trend={null}
+                    value={formatCompactCurrency(currentTotalSavings)}
                 />
                 <StatCard
-                    title="Average Expense"
-                    value={formatCurrency(avgExpense)}
-                    icon={Receipt}
-                    trend={null}
+                    title="Avg Expense"
+                    value={formatCompactCurrency(avgExpense)}
                 />
                 <StatCard
-                    title="Average Savings"
+                    title="Avg Savings"
                     value={
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                            {formatCurrency(avgSavings)}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+                            {formatCompactCurrency(avgSavings)}
                             <span style={{
-                                fontSize: '0.9rem',
+                                fontSize: '0.85rem',
                                 color: avgSavingsPercent >= 20 ? 'var(--color-success)' : 'var(--color-danger)',
-                                background: avgSavingsPercent >= 20 ? 'rgba(var(--color-success-rgb), 0.1)' : 'rgba(var(--color-danger-rgb), 0.1)',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                fontWeight: 600
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap'
                             }}>
-                                {avgSavingsPercent}%
+                                {avgSavingsPercent >= 20 ? '↗' : '↘'} {avgSavingsPercent}%
                             </span>
                         </div>
                     }
-                    icon={TrendingUp}
-                    trend={null}
                 />
             </div>
 
