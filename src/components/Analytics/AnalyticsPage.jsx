@@ -257,9 +257,9 @@ const AnalyticsPage = () => {
                                 content={() => (
                                     <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', paddingTop: '20px', userSelect: 'none' }}>
                                         {[
-                                            { key: 'expense', label: 'Expense', color: '#ef4444' },
-                                            { key: 'salary', label: 'Salary', color: '#10b981' },
-                                            { key: 'savings', label: 'Savings', color: '#8b5cf6' }
+                                            { key: 'expense', label: 'Expense', color: '#F43F5E' },
+                                            { key: 'salary', label: 'Salary', color: '#10B981' },
+                                            { key: 'savings', label: 'Savings', color: '#4F46E5' }
                                         ].map(({ key, label, color }) => {
                                             const isActive = visibleLines[key];
                                             return (
@@ -311,7 +311,7 @@ const AnalyticsPage = () => {
                             <Line
                                 type="monotone"
                                 dataKey="salary"
-                                stroke="#10b981" // emerald-500
+                                stroke="#10B981" // emerald-500
                                 strokeWidth={2}
                                 name="Salary"
                                 dot={{ r: 4, strokeWidth: 2 }}
@@ -321,7 +321,7 @@ const AnalyticsPage = () => {
                             <Line
                                 type="monotone"
                                 dataKey="expense"
-                                stroke="#ef4444" // red-500
+                                stroke="#F43F5E" // red-500
                                 strokeWidth={2}
                                 name="Expense"
                                 dot={{ r: 4, strokeWidth: 2 }}
@@ -331,7 +331,7 @@ const AnalyticsPage = () => {
                             <Line
                                 type="monotone"
                                 dataKey="savings"
-                                stroke="#8b5cf6" // violet-500 (Primary)
+                                stroke="#4F46E5" // violet-500 (Primary)
                                 strokeWidth={3}
                                 name="Savings"
                                 dot={{ r: 4, strokeWidth: 2 }}

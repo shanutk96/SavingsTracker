@@ -18,10 +18,10 @@ const SavingsTable = ({ entries, onEdit, onDelete }) => {
                 <thead>
                     <tr style={{ background: 'var(--color-bg-subtle)' }}>
                         <th style={{ minWidth: '120px' }}>Month</th>
-                        <th style={{ color: 'var(--color-text-main)' }}>Salary</th>
-                        <th style={{ color: 'var(--color-danger)' }}>Expense</th>
-                        <th style={{ color: 'var(--color-success)' }}>Savings</th>
-                        <th style={{ color: 'var(--color-primary)' }}>Savings %</th>
+                        <th style={{ color: '#2563EB' }}>Salary</th>
+                        <th style={{ color: '#DC2626' }}>Expense</th>
+                        <th style={{ color: '#16A34A' }}>Savings</th>
+                        <th style={{ color: '#16A34A' }}>Savings %</th>
                         <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                 </thead>
@@ -63,22 +63,50 @@ const SavingsTable = ({ entries, onEdit, onDelete }) => {
                                     <td>
                                         <span style={{
                                             fontWeight: 600,
-                                            color: 'var(--color-text-main)',
-                                            background: 'rgba(255,255,255,0.5)',
-                                            padding: '2px 6px',
-                                            borderRadius: '4px'
+                                            color: '#2563EB',
+                                            background: '#EFF6FF',
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
+                                            display: 'inline-block'
                                         }}>
                                             {formatCurrency(entry.salary || 0)}
                                         </span>
                                     </td>
-                                    <td style={getStyleForValue(entry.expense, 'expense')}>
-                                        {formatCurrency(entry.expense)}
+                                    <td>
+                                        <span style={{
+                                            fontWeight: 600,
+                                            color: '#DC2626',
+                                            background: '#FEF2F2',
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
+                                            display: 'inline-block'
+                                        }}>
+                                            {formatCurrency(entry.expense || 0)}
+                                        </span>
                                     </td>
-                                    <td style={getStyleForValue(entry.savings, 'savings')}>
-                                        {formatCurrency(entry.savings)}
+                                    <td>
+                                        <span style={{
+                                            fontWeight: 600,
+                                            color: '#16A34A',
+                                            background: '#ECFDF5',
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
+                                            display: 'inline-block'
+                                        }}>
+                                            {formatCurrency(entry.savings || 0)}
+                                        </span>
                                     </td>
-                                    <td style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
-                                        {percentage.toFixed(1)}%
+                                    <td>
+                                        <span style={{
+                                            fontWeight: 700,
+                                            color: '#16A34A',
+                                            background: '#ECFDF5',
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
+                                            display: 'inline-block'
+                                        }}>
+                                            {percentage.toFixed(1)}%
+                                        </span>
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
                                         <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>

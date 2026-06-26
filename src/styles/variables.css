@@ -1,31 +1,31 @@
 :root {
   /* HSL Color Palette - Vibrant & Premium */
-  --hue-primary: 265; /* Violet/Purple - More vibrant */
-  --hue-secondary: 320; /* Pink/Magenta - For gradients */
-  --hue-success: 150; /* Emerald */
-  --hue-danger: 340; /* Soft Red */
+  --hue-primary: 243; /* Indigo */
+  --hue-secondary: 188; /* Cyan / Accent */
+  --hue-success: 160; /* Emerald */
+  --hue-danger: 350; /* Rose / Expense */
   --hue-warning: 35;  /* Amber */
   
   /* Primary Colors */
-  --color-primary: hsl(var(--hue-primary), 90%, 65%); /* Lighter, more pop */
-  --color-primary-hover: hsl(var(--hue-primary), 90%, 55%);
-  --color-primary-light: hsl(var(--hue-primary), 80%, 96%);
+  --color-primary: hsl(var(--hue-primary), 75%, 59%); /* #4F46E5 */
+  --color-primary-hover: hsl(var(--hue-primary), 75%, 49%);
+  --color-primary-light: hsl(var(--hue-primary), 75%, 96%);
   
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, hsl(var(--hue-primary), 90%, 60%) 0%, hsl(var(--hue-secondary), 80%, 60%) 100%);
-  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #fcfaff 100%);
-  --gradient-bg: linear-gradient(135deg, hsl(230, 80%, 98%) 0%, hsl(280, 50%, 98%) 100%);
+  --gradient-primary: linear-gradient(135deg, hsl(var(--hue-primary), 75%, 59%) 0%, hsl(var(--hue-secondary), 95%, 43%) 100%);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #F9FAFB 100%);
+  --gradient-bg: linear-gradient(135deg, #F9FAFB 0%, hsl(var(--hue-primary), 75%, 97%) 100%);
 
   /* Semantic Colors */
-  --color-success: hsl(var(--hue-success), 80%, 40%);
-  --color-success-bg: hsl(var(--hue-success), 80%, 95%);
-  --color-danger: hsl(var(--hue-danger), 90%, 55%);
-  --color-danger-bg: hsl(var(--hue-danger), 90%, 97%);
+  --color-success: hsl(var(--hue-success), 84%, 39%); /* #10B981 */
+  --color-success-bg: hsl(var(--hue-success), 84%, 94%);
+  --color-danger: hsl(var(--hue-danger), 89%, 60%); /* #F43F5E */
+  --color-danger-bg: hsl(var(--hue-danger), 89%, 95%);
   
   /* Surfaces & Backgrounds */
-  --color-bg-body: hsl(250, 20%, 98%); /* Slightly tinted background */
+  --color-bg-body: #F9FAFB;
   --color-bg-surface: #ffffff;
-  --color-bg-subtle: hsl(250, 15%, 97%);
+  --color-bg-subtle: hsl(210, 10%, 96%);
   
   /* Typography */
   --color-text-main: hsl(250, 40%, 15%); /* Deep violet-black */

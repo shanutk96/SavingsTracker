@@ -1052,6 +1052,24 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                     </div>
                                 ) : (
                                     <>
+                                        <button
+                                            onClick={() => onUpdate(item.id, { isChecked: !item.isChecked })}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                color: item.isChecked ? 'var(--color-success)' : 'var(--color-text-muted)',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                padding: '4px',
+                                                borderRadius: 'var(--radius-sm)',
+                                                marginRight: '4px'
+                                            }}
+                                            title={item.isChecked ? "Mark as unpaid" : "Mark as paid"}
+                                        >
+                                            {item.isChecked ? <CheckSquare size={16} /> : <Square size={16} />}
+                                        </button>
                                         <div style={{ flex: 1, color: item.isChecked ? 'var(--color-text-muted)' : 'var(--color-text-main)', textDecoration: item.isChecked ? 'line-through' : 'none' }}>
                                             {item.description}
                                         </div>
