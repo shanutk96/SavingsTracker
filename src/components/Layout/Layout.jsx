@@ -6,7 +6,7 @@ const Layout = () => {
     return (
         <>
             <Navbar />
-            <main className="container" style={{ flex: 1, padding: '2rem 1rem' }}>
+            <main className="container main-content" style={{ flex: 1 }}>
                 <Outlet />
             </main>
             <footer style={{

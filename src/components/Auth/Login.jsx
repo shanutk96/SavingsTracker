@@ -72,10 +72,10 @@ const Login = () => {
                 // backdropFilter deleted to crisp up image
             }} />
 
-            <div className="card" style={{
-                width: '100%',
+            <div className="card login-card" style={{
+                width: 'calc(100% - 2rem)',
                 maxWidth: '400px',
-                padding: '2.5rem',
+                margin: '1rem',
                 backdropFilter: 'blur(10px)', /* Glass effect */
                 background: 'rgba(255, 255, 255, 0.8)',
                 zIndex: 1,

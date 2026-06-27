@@ -9,12 +9,15 @@ const StatCard = ({ title, value, hoverValue, action }) => {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             style={{ 
-                padding: '1rem 1.5rem', 
-                height: '80px', 
+                padding: '1rem 1.25rem', 
+                minHeight: '80px', 
+                height: 'auto',
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'space-between',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                gap: '0.5rem',
+                flexWrap: 'wrap'
             }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

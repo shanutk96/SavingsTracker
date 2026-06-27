@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useData } from '../../context/DataContext';
 import Button from '../UI/Button';
 import DeleteConfirmationModal from '../Dashboard/DeleteConfirmationModal';
-import { Plus, Trash2, SquarePen, AlertCircle, CheckCircle, MoreVertical } from 'lucide-react';
+import { Plus, Minus, Trash2, SquarePen, AlertCircle, CheckCircle, MoreVertical } from 'lucide-react';
 
 const DistributionPage = () => {
     const {
@@ -22,6 +22,28 @@ const DistributionPage = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [activeDropdownId, setActiveDropdownId] = useState(null);
+
+    const [isFormExpanded, setIsFormExpanded] = useState(false);
+    const [toast, setToast] = useState(null);
+    const toastTimeoutRef = useRef(null);
+
+    const showToast = (message) => {
+        if (toastTimeoutRef.current) {
+            clearTimeout(toastTimeoutRef.current);
+        }
+        setToast(message);
+        toastTimeoutRef.current = setTimeout(() => {
+            setToast(null);
+        }, 3000);
+    };
+
+    React.useEffect(() => {
+        return () => {
+            if (toastTimeoutRef.current) {
+                clearTimeout(toastTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Calculate Total Actual Savings
     const totalActualSavings = entries.length > 0 ? entries[0].totalSavings : initialBalance;
@@ -80,11 +102,10 @@ const DistributionPage = () => {
         try {
             const sanitized = String(expression).replace(/[^0-9+\-*/. ]/g, '');
             if (!sanitized) return 0;
-            // eslint-disable-next-line no-new-func
             const result = new Function('return ' + sanitized)();
             if (isNaN(result) || !isFinite(result)) return 0;
             return result;
-        } catch (err) {
+        } catch {
             return 0;
         }
     };
@@ -111,18 +132,24 @@ const DistributionPage = () => {
         if (isEditing) {
             await updateDistribution(isEditing, newData);
             setIsEditing(null);
+            showToast('Asset updated successfully.');
         } else {
             await addDistribution(newData);
+            showToast('Asset added successfully.');
         }
         setFormData({ name: '', amount: '', isSalaryAccount: false });
+        setIsFormExpanded(false);
     };
 
     const handleEdit = (item) => {
         setFormData({ name: item.name, amount: item.amount, isSalaryAccount: item.isSalaryAccount || false });
         setIsEditing(item.id);
+        setIsFormExpanded(true);
         // Scroll to form and focus
-        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => nameInputRef.current?.focus(), 500);
+        setTimeout(() => {
+            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            nameInputRef.current?.focus();
+        }, 100);
     };
 
     const handleDelete = (id) => {
@@ -138,12 +165,14 @@ const DistributionPage = () => {
             deleteDistribution(itemToDelete.id);
             setItemToDelete(null);
             setIsDeleteModalOpen(false);
+            showToast('Asset deleted successfully.');
         }
     };
 
     const handleCancel = () => {
         setIsEditing(null);
         setFormData({ name: '', amount: '', isSalaryAccount: false });
+        setIsFormExpanded(false);
     };
 
     return (
@@ -152,39 +181,30 @@ const DistributionPage = () => {
             <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>Track where your savings are currently located.</p>
 
             {/* Reconciliation Stats - Compact Row */}
-            <div className="card" style={{
-                padding: '0.75rem 1.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+            <div className="card flex-responsive" style={{
+                padding: '1rem',
                 marginBottom: '1.5rem',
                 gap: '1rem',
-                flexWrap: 'wrap'
+                alignItems: 'center'
             }}>
                 {/* Savings Column */}
-                <div style={{ flex: 1, minWidth: '100px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>Savings</span>
                     <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-primary)' }}>
                         {formatCurrency(totalActualSavings)}
                     </span>
                 </div>
 
-                {/* Vertical Divider 1 */}
-                <div style={{ width: '1px', height: '32px', background: 'var(--color-border)', alignSelf: 'center' }} className="stats-divider" />
-
                 {/* Distributed Column */}
-                <div style={{ flex: 1, minWidth: '100px', display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '0.75rem' }} className="stats-col-padded">
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>Distributed</span>
                     <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text-main)' }}>
                         {formatCurrency(totalDistributed)}
                     </span>
                 </div>
 
-                {/* Vertical Divider 2 */}
-                <div style={{ width: '1px', height: '32px', background: 'var(--color-border)', alignSelf: 'center' }} className="stats-divider" />
-
                 {/* Difference Column */}
-                <div style={{ flex: 1, minWidth: '100px', display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '0.75rem' }} className="stats-col-padded">
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>Difference</span>
                     <span style={{
                         fontSize: '1.1rem',
@@ -205,92 +225,123 @@ const DistributionPage = () => {
                     </span>
                 </div>
 
-                <style>{`
-                    @media (max-width: 480px) {
-                        .stats-divider {
-                            display: none !important;
-                        }
-                        .stats-col-padded {
-                            padding-left: 0 !important;
-                        }
-                    }
-                `}</style>
-            </div>
-
-            {/* Input Form - One Row Layout */}
-            <div ref={formRef} className="card" style={{ 
-                marginBottom: '2rem', 
-                padding: '0.85rem 1.25rem', 
-                transition: 'box-shadow 0.3s', 
-                boxShadow: isEditing ? '0 0 0 2px var(--color-primary)' : 'var(--shadow-sm)' 
-            }}>
-                <form onSubmit={handleSubmit} style={{ 
+                {/* Add Asset Action Button */}
+                <div style={{ 
                     display: 'flex', 
-                    gap: '0.85rem', 
                     alignItems: 'center', 
-                    flexWrap: 'wrap',
-                    width: '100%'
+                    justifyContent: 'flex-end', 
+                    minWidth: 'max-content',
+                    marginLeft: 'auto',
+                    width: '100%',
+                    maxWidth: 'max-content'
                 }}>
-                    <div style={{ flex: 2, minWidth: '180px' }}>
-                        <input
-                            type="text"
-                            ref={nameInputRef}
-                            placeholder="Asset Name (e.g. HDFC Bank)"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="input-field"
-                            style={{ minHeight: '38px', padding: '0.5rem 0.75rem', fontSize: '0.9rem' }}
-                            required
-                        />
-                    </div>
-                    <div style={{ flex: 1.2, minWidth: '120px' }}>
-                        <input
-                            type="text"
-                            placeholder="Amount (e.g. 50000)"
-                            value={formData.amount}
-                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                            className="input-field"
-                            style={{ minHeight: '38px', padding: '0.5rem 0.75rem', fontSize: '0.9rem' }}
-                            required
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap', userSelect: 'none' }}>
-                        <input
-                            type="checkbox"
-                            id="salaryAccount"
-                            checked={formData.isSalaryAccount}
-                            onChange={(e) => setFormData({ ...formData, isSalaryAccount: e.target.checked })}
-                            style={{ width: '1.05rem', height: '1.05rem', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
-                        />
-                        <label htmlFor="salaryAccount" style={{ cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>
-                            Primary Account
-                        </label>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.4rem', marginLeft: 'auto' }}>
-                        {isEditing && (
-                            <Button 
-                                type="button" 
-                                variant="ghost" 
-                                onClick={handleCancel}
-                                style={{ minHeight: '38px', padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
-                            >
-                                Cancel
-                            </Button>
+                    <button
+                        onClick={() => {
+                            if (isFormExpanded && isEditing) {
+                                handleCancel();
+                            } else {
+                                setIsFormExpanded(!isFormExpanded);
+                            }
+                        }}
+                        className={`btn ${isFormExpanded ? 'btn-ghost' : ''}`}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            minHeight: '30px',
+                            padding: '0.3rem 0.6rem',
+                            background: isFormExpanded ? 'transparent' : 'var(--gradient-primary)',
+                            color: isFormExpanded ? 'var(--color-text-muted)' : 'white',
+                            border: isFormExpanded ? '1px dashed var(--color-border)' : 'none',
+                            borderRadius: 'var(--radius-md)',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontSize: '0.78rem'
+                        }}
+                    >
+                        {isFormExpanded ? (
+                            <>
+                                <Minus size={13} /> {isEditing ? 'Cancel' : 'Close'}
+                            </>
+                        ) : (
+                            <>
+                                <Plus size={13} /> Add Asset
+                            </>
                         )}
-                        <Button 
-                            type="submit"
-                            style={{ minHeight: '38px', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                        >
-                            {isEditing ? 'Update' : 'Add'}
-                        </Button>
-                    </div>
-                </form>
+                    </button>
+                </div>
             </div>
 
-            {/* Distribution List */}
-            <div className="card" style={{ padding: '1rem' }}>
+            {/* Collapsible Input Form Card */}
+            {isFormExpanded && (
+                <div ref={formRef} className="card" style={{ 
+                    marginBottom: '1.5rem', 
+                    padding: '1rem', 
+                    transition: 'box-shadow 0.3s', 
+                    boxShadow: isEditing ? '0 0 0 2px var(--color-primary)' : 'var(--shadow-sm)' 
+                }}>
+                    <form onSubmit={handleSubmit} className="flex-responsive" style={{ 
+                        gap: '0.85rem', 
+                        alignItems: 'center',
+                        width: '100%'
+                    }}>
+                        <div style={{ flex: 2, width: '100%' }}>
+                            <input
+                                type="text"
+                                ref={nameInputRef}
+                                placeholder="Asset Name (e.g. HDFC Bank)"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className="input-field"
+                                required
+                            />
+                        </div>
+                        <div style={{ flex: 1.2, width: '100%' }}>
+                            <input
+                                type="text"
+                                placeholder="Amount (e.g. 50000)"
+                                value={formData.amount}
+                                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                className="input-field"
+                                required
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', userSelect: 'none', minHeight: '44px' }}>
+                            <input
+                                type="checkbox"
+                                id="salaryAccount"
+                                checked={formData.isSalaryAccount}
+                                onChange={(e) => setFormData({ ...formData, isSalaryAccount: e.target.checked })}
+                                style={{ width: '1.25rem', height: '1.25rem', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+                            />
+                            <label htmlFor="salaryAccount" style={{ cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>
+                                Primary Account
+                            </label>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginLeft: 'auto', width: '100%', maxWidth: 'max-content' }}>
+                            {isEditing && (
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    onClick={handleCancel}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+                            <Button 
+                                type="submit"
+                            >
+                                {isEditing ? 'Update' : 'Add'}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* Distribution List - Desktop */}
+            <div className="card desktop-only" style={{ padding: '1rem' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -505,6 +556,240 @@ const DistributionPage = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Distribution List - Mobile */}
+            <div className="mobile-only">
+                {sortedDistributions.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--color-text-muted)', background: 'var(--color-bg-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
+                        No distributions added yet.
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {sortedDistributions.map(item => {
+                            const percentage = totalDistributed > 0 ? (item.amount / totalDistributed) * 100 : 0;
+                            return (
+                                <div key={item.id} style={{
+                                    padding: '1rem',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: 'var(--radius-lg)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.75rem',
+                                    background: 'var(--color-bg-surface)',
+                                    boxShadow: 'var(--shadow-sm)'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                        <div>
+                                            <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--color-text-main)' }}>{item.name}</span>
+                                            {item.isSalaryAccount && (
+                                                <span style={{
+                                                    color: 'var(--color-text-muted)',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 500,
+                                                    marginLeft: '0.4rem',
+                                                    background: 'var(--color-bg-subtle)',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px'
+                                                }}>
+                                                    Salary
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveDropdownId(activeDropdownId === item.id ? null : item.id);
+                                                }}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    color: 'var(--color-text-muted)',
+                                                    padding: '4px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    borderRadius: '4px',
+                                                    width: '44px',
+                                                    height: '44px'
+                                                }}
+                                                className="btn-ghost"
+                                                title="Actions"
+                                            >
+                                                <MoreVertical size={18} />
+                                            </button>
+                                            
+                                            {activeDropdownId === item.id && (
+                                                <>
+                                                    <div
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveDropdownId(null);
+                                                        }}
+                                                        style={{
+                                                            position: 'fixed',
+                                                            top: 0,
+                                                            left: 0,
+                                                            right: 0,
+                                                            bottom: 0,
+                                                            zIndex: 999,
+                                                            background: 'transparent'
+                                                        }}
+                                                    />
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        right: '0px',
+                                                        top: '100%',
+                                                        background: 'var(--color-bg-surface)',
+                                                        border: '1px solid var(--color-border)',
+                                                        borderRadius: '6px',
+                                                        boxShadow: 'var(--shadow-md)',
+                                                        zIndex: 1000,
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        minWidth: '120px',
+                                                        padding: '4px 0',
+                                                        marginTop: '4px'
+                                                    }} onClick={e => e.stopPropagation()}>
+                                                        <button
+                                                            onClick={() => {
+                                                                setActiveDropdownId(null);
+                                                                handleEdit(item);
+                                                            }}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                textAlign: 'left',
+                                                                padding: '10px 12px',
+                                                                cursor: 'pointer',
+                                                                color: 'var(--color-text-main)',
+                                                                fontSize: '0.9rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                width: '100%',
+                                                                minHeight: '44px'
+                                                            }}
+                                                        >
+                                                            <SquarePen size={14} /> Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setActiveDropdownId(null);
+                                                                handleDelete(item.id);
+                                                            }}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                textAlign: 'left',
+                                                                padding: '10px 12px',
+                                                                cursor: 'pointer',
+                                                                color: 'var(--color-danger)',
+                                                                fontSize: '0.9rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                width: '100%',
+                                                                minHeight: '44px'
+                                                            }}
+                                                        >
+                                                            <Trash2 size={14} /> Delete
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        background: 'var(--color-bg-subtle)',
+                                        padding: '0.75rem',
+                                        borderRadius: 'var(--radius-md)'
+                                    }}>
+                                        <div>
+                                            <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 500, marginBottom: '4px' }}>ALLOCATION</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{
+                                                    width: '60px',
+                                                    height: '6px',
+                                                    background: 'var(--color-border)',
+                                                    borderRadius: '3px',
+                                                    overflow: 'hidden',
+                                                    display: 'inline-block'
+                                                }}>
+                                                    <div style={{
+                                                        width: `${percentage}%`,
+                                                        height: '100%',
+                                                        background: 'var(--gradient-primary)'
+                                                    }} />
+                                                </div>
+                                                <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '0.85rem' }}>
+                                                    {percentage.toFixed(1)}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 500, marginBottom: '4px' }}>AMOUNT</span>
+                                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-text-main)' }}>
+                                                {formatCurrency(item.amount)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        
+                        {/* Total Card */}
+                        {distributions.length > 0 && (
+                            <div style={{
+                                background: 'var(--color-bg-subtle)',
+                                padding: '1rem',
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--color-border)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontWeight: 700
+                            }}>
+                                <span>Total Distributed</span>
+                                <span style={{ color: 'var(--color-primary)' }}>{formatCurrency(totalDistributed)}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {toast && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 10000
+                }}>
+                    <div style={{
+                        background: 'var(--color-bg-surface)',
+                        color: 'var(--color-text-main)',
+                        border: '1px solid var(--color-success)',
+                        boxShadow: 'var(--shadow-lg)',
+                        borderRadius: '50px',
+                        padding: '0.75rem 1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        animation: 'slideUp 0.3s ease-out',
+                        fontSize: '0.9rem',
+                        fontWeight: 600
+                    }}>
+                        <CheckCircle size={18} color="var(--color-success)" />
+                        {toast}
+                    </div>
+                </div>
+            )}
 
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}

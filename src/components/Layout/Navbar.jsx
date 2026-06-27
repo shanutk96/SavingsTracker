@@ -11,6 +11,7 @@ const Navbar = () => {
 
     // Close menu when route changes
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsMenuOpen(false);
     }, [location]);
 
@@ -51,7 +52,7 @@ const Navbar = () => {
                     <div style={{
                         width: '32px',
                         height: '32px',
-                        background: 'var(--color-primary)',
+                        background: 'var(--gradient-primary)',
                         borderRadius: 'var(--radius-md)',
                         display: 'flex',
                         alignItems: 'center',
@@ -122,8 +123,12 @@ const Navbar = () => {
                                 border: 'none',
                                 cursor: 'pointer',
                                 color: 'var(--color-text-main)',
-                                padding: '0.5rem',
-                                display: 'none' // Hidden by default, shown via CSS
+                                display: 'none', // Managed by media queries below
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '44px',
+                                height: '44px',
+                                borderRadius: 'var(--radius-sm)'
                             }}
                         >
                             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -141,7 +146,7 @@ const Navbar = () => {
                                 padding: '1rem',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '1rem',
+                                gap: '0.75rem',
                                 boxShadow: 'var(--shadow-md)',
                                 zIndex: 50
                             }}>
@@ -155,11 +160,12 @@ const Navbar = () => {
                                             color: isActive ? 'var(--color-primary)' : 'var(--color-text-main)',
                                             fontWeight: isActive ? 600 : 500,
                                             fontSize: '1rem',
-                                            padding: '0.75rem',
+                                            padding: '0.85rem 1rem',
                                             borderRadius: '8px',
                                             background: isActive ? 'var(--color-bg-subtle)' : 'transparent',
                                             display: 'flex',
-                                            alignItems: 'center'
+                                            alignItems: 'center',
+                                            minHeight: '44px'
                                         })}
                                     >
                                         {link.label}
@@ -167,9 +173,9 @@ const Navbar = () => {
                                 ))}
                                 <div style={{ height: '1px', background: 'var(--color-border)', margin: '0.5rem 0' }}></div>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem' }}>
-                                    <span style={{ fontWeight: 500, color: 'var(--color-text-muted)' }}>{user.username}</span>
-                                    <Button variant="ghost" size="sm" onClick={logout}>
-                                        <LogOut size={16} style={{ marginRight: '4px' }} />
+                                    <span style={{ fontWeight: 500, color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>{user.username}</span>
+                                    <Button variant="ghost" size="sm" onClick={logout} style={{ minHeight: '44px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <LogOut size={16} />
                                         Logout
                                     </Button>
                                 </div>
@@ -182,10 +188,10 @@ const Navbar = () => {
             <style>{`
         @media (max-width: 768px) {
           .desktop-menu { display: none !important; }
-          .mobile-menu-btn { display: block !important; }
+          .mobile-menu-btn { display: flex !important; }
         }
         @media (min-width: 769px) {
-            .mobile-menu-btn { display: none !important; }
+          .mobile-menu-btn { display: none !important; }
         }
       `}</style>
         </nav >

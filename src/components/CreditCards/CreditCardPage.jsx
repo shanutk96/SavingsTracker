@@ -288,16 +288,16 @@ const CreditCardPage = () => {
 
             {/* Header */}
             <div style={{ marginBottom: '2rem' }}>
-                <div className="flex-responsive" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ marginBottom: '1rem' }}>
+                <div className="flex-responsive" style={{ marginBottom: '2rem' }}>
+                    <div style={{ marginBottom: '0.5rem' }}>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Credit Cards</h2>
                         <p style={{ color: 'var(--color-text-muted)' }}>Track your credit card spending and payments.</p>
                     </div>
 
-                    <div className="header-controls" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <div className="header-controls">
                         {/* Month/Year Selects */}
-                        <div className="date-selector-group" style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center' }}>
-                            <Button variant="ghost" onClick={handlePrevMonth} style={{ padding: '0.5rem' }}>
+                        <div className="date-selector-group">
+                            <Button variant="ghost" onClick={handlePrevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <ChevronLeft size={20} />
                             </Button>
                             <select
@@ -305,17 +305,6 @@ const CreditCardPage = () => {
                                 onChange={(e) => setSelectedMonthName(e.target.value)}
                                 className="select-minimal"
                                 style={{
-                                    padding: '0.5rem 2rem 0.5rem 1rem',
-                                    appearance: 'none',
-                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                                    backgroundRepeat: 'no-repeat',
-                                    backgroundPosition: 'right 0.75rem center',
-                                    backgroundSize: '1em',
-                                    border: '1px solid var(--color-border)',
-                                    borderRadius: '8px',
-                                    background: 'var(--color-bg-card)',
-                                    color: 'var(--color-text-main)',
-                                    fontWeight: 600,
                                     cursor: 'pointer'
                                 }}
                             >
@@ -328,17 +317,6 @@ const CreditCardPage = () => {
                                 onChange={(e) => setSelectedYear(Number(e.target.value))}
                                 className="select-minimal"
                                 style={{
-                                    padding: '0.5rem 2rem 0.5rem 1rem',
-                                    appearance: 'none',
-                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                                    backgroundRepeat: 'no-repeat',
-                                    backgroundPosition: 'right 0.75rem center',
-                                    backgroundSize: '1em',
-                                    border: '1px solid var(--color-border)',
-                                    borderRadius: '8px',
-                                    background: 'var(--color-bg-card)',
-                                    color: 'var(--color-text-main)',
-                                    fontWeight: 600,
                                     cursor: 'pointer'
                                 }}
                             >
@@ -346,7 +324,7 @@ const CreditCardPage = () => {
                                     <option key={y} value={y}>{y}</option>
                                 ))}
                             </select>
-                            <Button variant="ghost" onClick={handleNextMonth} style={{ padding: '0.5rem' }}>
+                            <Button variant="ghost" onClick={handleNextMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <ChevronRight size={20} />
                             </Button>
                         </div>
@@ -355,30 +333,24 @@ const CreditCardPage = () => {
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.4rem 0.8rem',
-                                fontSize: '0.9rem',
-                                whiteSpace: 'nowrap'
+                                justifyContent: 'center',
+                                gap: '0.5rem'
                             }}
                         >
-                            <Plus size={16} style={{ marginRight: '0.1rem' }} /> Add Card
+                            <Plus size={16} /> Add Card
                         </Button>
                         {/* Manage Categories Button - Moved inside header-controls for better stacking on mobile */}
                         <button
                             onClick={() => setIsManagerOpen(true)}
+                            className="btn btn-ghost"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: '0.5rem',
-                                background: 'transparent',
                                 border: '1px solid var(--color-border)',
-                                padding: '0.4rem 0.8rem',
-                                borderRadius: '8px',
                                 cursor: 'pointer',
-                                color: 'var(--color-text-muted)',
-                                fontSize: '0.9rem',
-                                fontWeight: 500,
-                                whiteSpace: 'nowrap'
+                                color: 'var(--color-text-muted)'
                             }}
                         >
                             <Settings size={16} /> Manage
@@ -875,14 +847,25 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
                         <h3 style={{ fontWeight: 700, fontSize: '1.05rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>{cardName}</h3>
 
-                        <div className="header-actions" style={{ display: 'flex', gap: '8px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="header-actions" style={{ display: 'flex', gap: '4px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                             <button
                                 onClick={() => onMarkPaid(!allPaid)}
                                 className="header-edit-btn"
-                                style={{ background: 'none', border: 'none', outline: 'none', cursor: 'pointer', color: allPaid ? 'var(--color-success)' : 'var(--color-text-muted)', padding: '2px', display: 'flex', alignItems: 'center' }}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    outline: 'none',
+                                    cursor: 'pointer',
+                                    color: allPaid ? 'var(--color-success)' : 'var(--color-text-muted)',
+                                    width: '44px',
+                                    height: '44px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
                                 title={allPaid ? "Mark All Unpaid" : "Mark All Paid"}
                             >
-                                <CheckCircle size={14} />
+                                <CheckCircle size={18} />
                             </button>
                             <button
                                 onClick={onDeleteGroup}
@@ -893,7 +876,8 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                     outline: 'none',
                                     cursor: 'pointer',
                                     color: 'var(--color-text-muted)',
-                                    padding: '6px',
+                                    width: '44px',
+                                    height: '44px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -910,7 +894,7 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                 }}
                                 title="Delete Card Group"
                             >
-                                <Trash2 size={14} />
+                                <Trash2 size={18} />
                             </button>
                         </div>
                     </div>
@@ -1021,7 +1005,7 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                             <button
                                                 onClick={() => handleEditSave(item.id, editFormData)}
                                                 style={{
-                                                    background: 'var(--color-primary)',
+                                                    background: 'var(--gradient-primary)',
                                                     color: 'white',
                                                     border: 'none',
                                                     borderRadius: '4px',
@@ -1084,7 +1068,8 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                                     border: 'none',
                                                     cursor: 'pointer',
                                                     color: 'var(--color-text-muted)',
-                                                    padding: '6px',
+                                                    width: '44px',
+                                                    height: '44px',
                                                     borderRadius: 'var(--radius-sm)',
                                                     transition: 'all 0.15s ease',
                                                     display: 'inline-flex',
@@ -1101,7 +1086,7 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                                 }}
                                                 title="Edit"
                                             >
-                                                <SquarePen size={12} />
+                                                <SquarePen size={18} />
                                             </button>
                                             <button
                                                 onClick={() => promptDeleteItem(item)}
@@ -1110,7 +1095,8 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                                     border: 'none',
                                                     cursor: 'pointer',
                                                     color: 'var(--color-text-muted)',
-                                                    padding: '6px',
+                                                    width: '44px',
+                                                    height: '44px',
                                                     borderRadius: 'var(--radius-sm)',
                                                     transition: 'all 0.15s ease',
                                                     display: 'inline-flex',
@@ -1127,7 +1113,7 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                                 }}
                                                 title="Delete"
                                             >
-                                                <Trash2 size={12} />
+                                                <Trash2 size={18} />
                                             </button>
                                         </div>
                                     </>

@@ -16,14 +16,14 @@ import Button from '../UI/Button';
 const AnalyticsPage = () => {
     const { entries } = useData();
 
-    const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear().toString());
+    const [selectedYear, setSelectedYear] = React.useState('All');
     const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
 
     // Graph visibility state
     const [visibleLines, setVisibleLines] = React.useState({
         salary: true,
         expense: true,
-        savings: true
+        savings: false
     });
 
     const toggleLine = (key) => {

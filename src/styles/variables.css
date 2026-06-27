@@ -13,8 +13,8 @@
   
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, hsl(var(--hue-primary), 75%, 59%) 0%, hsl(var(--hue-secondary), 95%, 43%) 100%);
-  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #F5F5F7 100%);
-  --gradient-bg: #F5F5F7;
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #F5F7FB 100%);
+  --gradient-bg: #F5F7FB;
 
   /* Semantic Colors */
   --color-success: hsl(var(--hue-success), 84%, 39%); /* #10B981 */
@@ -23,7 +23,7 @@
   --color-danger-bg: hsl(var(--hue-danger), 89%, 95%);
   
   /* Surfaces & Backgrounds */
-  --color-bg-body: #F5F5F7;
+  --color-bg-body: #F5F7FB;
   --color-bg-surface: #ffffff;
   --color-bg-subtle: hsl(210, 10%, 96%);
   
