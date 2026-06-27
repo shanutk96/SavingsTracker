@@ -260,62 +260,60 @@ const ExpensesPage = () => {
             />
 
             {/* Header */}
-            <div style={{ marginBottom: '2rem' }}>
-                <div className="flex-responsive" style={{ marginBottom: '2rem' }}>
-                    <div style={{ marginBottom: '0.5rem' }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Expense</h2>
-                        <p style={{ color: 'var(--color-text-muted)' }}>Record daily expenses and get a clear breakdown of your monthly spending.</p>
-                    </div>
-                    <div className="header-controls">
-                        <div className="date-selector-group">
-                            <Button variant="ghost" onClick={handlePrevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <ChevronLeft size={20} />
-                            </Button>
-                            <select
-                                value={selectedMonthName}
-                                onChange={(e) => setSelectedMonthName(e.target.value)}
-                                className="select-minimal"
-                                style={{
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                {months.map(m => (
-                                    <option key={m} value={m}>{m}</option>
-                                ))}
-                            </select>
-
-                            <select
-                                value={selectedYear}
-                                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                                className="select-minimal"
-                                style={{
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                {yearOptions.map(y => (
-                                    <option key={y} value={y}>{y}</option>
-                                ))}
-                            </select>
-                            <Button variant="ghost" onClick={handleNextMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <ChevronRight size={20} />
-                            </Button>
-                        </div>
-                        {/* Manage Categories Button */}
-                        <button
-                            onClick={() => setIsManagerOpen(true)}
-                            className="btn btn-ghost"
+            <div className="flex-responsive" style={{ marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: '0.5rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Expense</h2>
+                    <p style={{ color: 'var(--color-text-muted)' }}>Record daily expenses and get a clear breakdown of your monthly spending.</p>
+                </div>
+                <div className="header-controls">
+                    <div className="date-selector-group">
+                        <Button variant="ghost" onClick={handlePrevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ChevronLeft size={20} />
+                        </Button>
+                        <select
+                            value={selectedMonthName}
+                            onChange={(e) => setSelectedMonthName(e.target.value)}
+                            className="select-minimal"
                             style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                border: '1px solid var(--color-border)',
-                                cursor: 'pointer',
-                                color: 'var(--color-text-muted)'
+                                cursor: 'pointer'
                             }}
                         >
-                            <Settings size={14} /> Manage
-                        </button>
+                            {months.map(m => (
+                                <option key={m} value={m}>{m}</option>
+                            ))}
+                        </select>
+
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            className="select-minimal"
+                            style={{
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {yearOptions.map(y => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
+                        <Button variant="ghost" onClick={handleNextMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ChevronRight size={20} />
+                        </Button>
                     </div>
+                    {/* Manage Categories Button */}
+                    <button
+                        onClick={() => setIsManagerOpen(true)}
+                        className="btn btn-ghost"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            border: '1px solid var(--color-border)',
+                            cursor: 'pointer',
+                            color: 'var(--color-text-muted)'
+                        }}
+                    >
+                        <Settings size={14} /> Manage
+                    </button>
                 </div>
             </div>
 
@@ -324,7 +322,7 @@ const ExpensesPage = () => {
                 !viewCategory && (
                     <>
                         {/* Donut Chart */}
-                        <div style={{ height: '300px', position: 'relative', marginBottom: '2rem' }}>
+                        <div style={{ height: '220px', position: 'relative', marginBottom: '1.5rem' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
