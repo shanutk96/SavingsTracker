@@ -189,16 +189,31 @@ const Dashboard = () => {
                 <StatCard
                     title="Total Savings"
                     value={formatCompactCurrency(currentTotalSavings)}
+                    hoverValue={formatCurrency(currentTotalSavings)}
                 />
                 <StatCard
                     title="Avg Expense"
                     value={formatCompactCurrency(avgExpense)}
+                    hoverValue={formatCurrency(avgExpense)}
                 />
                 <StatCard
                     title="Avg Savings"
                     value={
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
                             {formatCompactCurrency(avgSavings)}
+                            <span style={{
+                                fontSize: '0.85rem',
+                                color: avgSavingsPercent >= 20 ? 'var(--color-success)' : 'var(--color-danger)',
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap'
+                            }}>
+                                {avgSavingsPercent >= 20 ? '↗' : '↘'} {avgSavingsPercent}%
+                            </span>
+                        </div>
+                    }
+                    hoverValue={
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+                            {formatCurrency(avgSavings)}
                             <span style={{
                                 fontSize: '0.85rem',
                                 color: avgSavingsPercent >= 20 ? 'var(--color-success)' : 'var(--color-danger)',

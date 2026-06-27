@@ -1,22 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const StatCard = ({ title, value, action }) => {
+const StatCard = ({ title, value, hoverValue, action }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
     return (
-        <div className="card" style={{ 
-            padding: '1rem 1.5rem', 
-            height: '80px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between' 
-        }}>
+        <div 
+            className="card" 
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{ 
+                padding: '1rem 1.5rem', 
+                height: '80px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                cursor: 'pointer'
+            }}
+        >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', margin: 0, fontWeight: 500 }}>
                     {title}
                 </p>
                 {action}
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-                {value}
+            <h3 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: 700, 
+                margin: 0,
+                transition: 'opacity 0.15s ease-in-out'
+            }}>
+                {isHovered && hoverValue ? hoverValue : value}
             </h3>
         </div>
     );
