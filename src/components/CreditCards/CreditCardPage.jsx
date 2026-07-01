@@ -955,13 +955,13 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                     }} onClick={e => e.stopPropagation()}>
                         {sortedItems.map(item => (
                             <div key={item.id} className="distribution-row" style={{
-                                padding: '8px 16px',
+                                padding: '4px 16px',
                                 borderBottom: '1px solid var(--color-border-subtle)',
                                 fontSize: '0.85rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem',
-                                minHeight: '36px'
+                                minHeight: '32px'
                             }}>
                                 {editingId === item.id ? (
                                     <div style={{ display: 'flex', gap: '0.5rem', width: '100%', alignItems: 'center' }}>
@@ -1068,8 +1068,8 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                                     border: 'none',
                                                     cursor: 'pointer',
                                                     color: 'var(--color-text-muted)',
-                                                    width: '44px',
-                                                    height: '44px',
+                                                    width: '28px',
+                                                    height: '28px',
                                                     borderRadius: 'var(--radius-sm)',
                                                     transition: 'all 0.15s ease',
                                                     display: 'inline-flex',
@@ -1086,7 +1086,7 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                                 }}
                                                 title="Edit"
                                             >
-                                                <SquarePen size={18} />
+                                                <SquarePen size={16} />
                                             </button>
                                             <button
                                                 onClick={() => promptDeleteItem(item)}
@@ -1095,8 +1095,8 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                                     border: 'none',
                                                     cursor: 'pointer',
                                                     color: 'var(--color-text-muted)',
-                                                    width: '44px',
-                                                    height: '44px',
+                                                    width: '28px',
+                                                    height: '28px',
                                                     borderRadius: 'var(--radius-sm)',
                                                     transition: 'all 0.15s ease',
                                                     display: 'inline-flex',
@@ -1113,7 +1113,7 @@ const CardGroup = ({ cardName, items, month, onAdd, onUpdate, onDelete, onRename
                                                 }}
                                                 title="Delete"
                                             >
-                                                <Trash2 size={18} />
+                                                <Trash2 size={16} />
                                             </button>
                                         </div>
                                     </>
