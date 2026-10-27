@@ -25,6 +25,7 @@ export const DataProvider = ({ children }) => {
     const { user } = useAuth(); // Now provides { uid, email, username } logic
     const [entries, setEntries] = useState([]);
     const [initialBalance, setInitialBalance] = useState(0);
+    const [initialBalanceExpression, setInitialBalanceExpression] = useState('');
     const [distributions, setDistributions] = useState([]);
     const [ccExpenses, setCcExpenses] = useState([]);
     const [dailyExpenses, setDailyExpenses] = useState([]);
@@ -39,6 +40,7 @@ export const DataProvider = ({ children }) => {
         if (!user) {
             setEntries([]);
             setInitialBalance(0);
+            setInitialBalanceExpression('');
             setDistributions([]);
             setCcExpenses([]);
             setDailyExpenses([]);
@@ -51,6 +53,7 @@ export const DataProvider = ({ children }) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setInitialBalance(data.initialBalance || 0);
+                setInitialBalanceExpression(data.initialBalanceExpression || (data.initialBalance !== undefined && data.initialBalance !== null ? String(data.initialBalance) : ''));
                 setCategoriesList(data.categories || []);
 
                 setCardsList(data.cards || []);
@@ -61,6 +64,7 @@ export const DataProvider = ({ children }) => {
                 // Initialize empty doc for new users
                 setDoc(userDocRef, {
                     initialBalance: 0,
+                    initialBalanceExpression: '',
                     categories: [],
 
                     cards: [],
@@ -275,11 +279,22 @@ export const DataProvider = ({ children }) => {
         await deleteDoc(entryRef);
     };
 
-    const updateInitialBalance = async (amount) => {
+    const updateInitialBalance = async (amount, expression) => {
         if (!user) return;
         const userDocRef = doc(db, 'users', user.uid);
-        // Set with merge to create if not exists or just update field
-        await setDoc(userDocRef, { initialBalance: Number(amount) }, { merge: true });
+        let finalAmount = amount;
+        let finalExpr = expression;
+        if (typeof amount === 'object' && amount !== null) {
+            finalAmount = amount.amount;
+            finalExpr = amount.expression;
+        }
+        const evaluated = typeof finalAmount === 'number' ? finalAmount : evaluateMathExpression(finalAmount);
+        const expr = finalExpr !== undefined && finalExpr !== null ? String(finalExpr).trim() : String(evaluated);
+
+        await setDoc(userDocRef, { 
+            initialBalance: evaluated,
+            initialBalanceExpression: expr 
+        }, { merge: true });
     };
 
     // Distribution Handlers
@@ -590,6 +605,7 @@ export const DataProvider = ({ children }) => {
         <DataContext.Provider value={{
             entries: processedEntries,
             initialBalance,
+            initialBalanceExpression,
             distributions,
             addEntry,
             updateEntry,

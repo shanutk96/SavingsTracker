@@ -9,7 +9,7 @@ import Button from '../UI/Button';
 import { Plus, Wallet, PiggyBank, Receipt, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
-    const { entries, addEntry, updateEntry, deleteEntry, initialBalance, updateInitialBalance, distributions, updateDistribution } = useData();
+    const { entries, addEntry, updateEntry, deleteEntry, initialBalance, initialBalanceExpression, updateInitialBalance, distributions, updateDistribution } = useData();
     const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
     const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -165,7 +165,12 @@ const Dashboard = () => {
                         </select>
                     </div>
 
-                    <Button variant="ghost" onClick={() => setIsBalanceModalOpen(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => setIsBalanceModalOpen(true)} 
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        title={initialBalanceExpression && initialBalanceExpression !== String(initialBalance) ? `Initial Savings: ${initialBalanceExpression} (= ${formatCurrency(initialBalance)})` : undefined}
+                    >
                         <Wallet size={16} style={{ marginRight: '0.5rem' }} />
                         Set Initial Savings
                     </Button>
@@ -280,6 +285,7 @@ const Dashboard = () => {
                 onClose={() => setIsBalanceModalOpen(false)}
                 onSave={updateInitialBalance}
                 currentBalance={initialBalance}
+                currentExpression={initialBalanceExpression}
             />
 
             <DeleteConfirmationModal

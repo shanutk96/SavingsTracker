@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../UI/Modal';
-import Input from '../UI/Input';
 import Button from '../UI/Button';
 
-const EditBalanceModal = ({ isOpen, onClose, onSave, currentBalance }) => {
+const EditBalanceModal = ({ isOpen, onClose, onSave, currentBalance, currentExpression }) => {
     const [balanceInput, setBalanceInput] = useState('');
+    const [evaluatedAmount, setEvaluatedAmount] = useState(null);
     const [error, setError] = useState('');
-
-    useEffect(() => {
-        if (isOpen) {
-            setBalanceInput(currentBalance.toString());
-            setError('');
-        }
-    }, [isOpen, currentBalance]);
 
     const evaluateExpression = (expression) => {
         try {
             // Remove any non-math characters (allowed: 0-9, +, -, *, /, ., space)
-            const sanitized = expression.replace(/[^0-9+\-*/. ]/g, '');
-            if (!sanitized) return 0;
+            const sanitized = String(expression).replace(/[^0-9+\-*/. ]/g, '');
+            if (!sanitized.trim()) return 0;
             // Evaluates safely
             // eslint-disable-next-line no-new-func
             const result = new Function('return ' + sanitized)();
@@ -29,12 +22,45 @@ const EditBalanceModal = ({ isOpen, onClose, onSave, currentBalance }) => {
         }
     };
 
+    useEffect(() => {
+        if (isOpen) {
+            const initialVal = currentExpression !== undefined && currentExpression !== null && currentExpression !== ''
+                ? String(currentExpression)
+                : (currentBalance !== undefined && currentBalance !== null ? currentBalance.toString() : '');
+            setBalanceInput(initialVal);
+            setError('');
+            try {
+                if (initialVal.trim()) {
+                    setEvaluatedAmount(evaluateExpression(initialVal));
+                } else {
+                    setEvaluatedAmount(null);
+                }
+            } catch {
+                setEvaluatedAmount(null);
+            }
+        }
+    }, [isOpen, currentBalance, currentExpression]);
+
+    // Live update evaluated amount
+    useEffect(() => {
+        if (!balanceInput || balanceInput.trim() === '') {
+            setEvaluatedAmount(null);
+            return;
+        }
+        try {
+            const val = evaluateExpression(balanceInput);
+            setEvaluatedAmount(val);
+        } catch {
+            // Expression might be incomplete while typing (e.g. "474760-")
+        }
+    }, [balanceInput]);
+
     const handleSubmit = (e) => {
         e.preventDefault();
         setError('');
         try {
             const finalValue = evaluateExpression(balanceInput);
-            onSave(finalValue);
+            onSave(finalValue, balanceInput.trim());
             onClose();
         } catch (err) {
             setError('Please enter a valid number or expression (e.g., 50000 + 2000)');
@@ -54,14 +80,29 @@ const EditBalanceModal = ({ isOpen, onClose, onSave, currentBalance }) => {
                     </div>
                 )}
 
-                <Input
-                    label="Initial Savings Amount"
-                    type="text"
-                    value={balanceInput}
-                    onChange={(e) => { setBalanceInput(e.target.value); setError(''); }}
-                    placeholder="e.g. 50000 + 1000"
-                    required
-                />
+                <div className="input-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <label style={{ fontWeight: 500, fontSize: '0.875rem', color: 'var(--color-text-main)', margin: 0 }}>
+                            Initial Savings Amount
+                        </label>
+                        {balanceInput && evaluatedAmount !== null && !isNaN(evaluatedAmount) && balanceInput.trim() !== String(evaluatedAmount) && (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 600 }}>
+                                = {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(evaluatedAmount)}
+                            </span>
+                        )}
+                    </div>
+                    <input
+                        type="text"
+                        className="input-field"
+                        value={balanceInput}
+                        onChange={(e) => { setBalanceInput(e.target.value); setError(''); }}
+                        placeholder="e.g. 50000 + 1000"
+                        style={{ fontFamily: 'monospace' }}
+                        autoFocus
+                        required
+                    />
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
                     <Button type="button" variant="ghost" onClick={onClose}>
                         Cancel
